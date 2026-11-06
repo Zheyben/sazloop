@@ -39,7 +39,12 @@ public class AdministradorService {
                 .orElseThrow(AdministradorService::denegado);
     }
 
-    /** Credenciales facilitadas al iniciar el servidor, nunca enviadas a GitHub. */
+    /**
+     * Crea la cuenta del administrador al iniciar, si todavía no existe, con el correo y la
+     * contraseña de application.properties. Son credenciales de demostración, escritas en el
+     * repositorio para ejecutar este proyecto académico en una computadora local; no deben usarse
+     * en un entorno real, donde vendrían de variables de entorno.
+     */
     @Bean
     @Profile("!demo")
     CommandLineRunner provisionarAdministrador(

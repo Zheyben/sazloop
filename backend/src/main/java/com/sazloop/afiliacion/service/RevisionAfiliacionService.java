@@ -97,6 +97,12 @@ public class RevisionAfiliacionService {
         if (doc.getFechaEmision() != null && doc.getFechaVencimiento() != null &&
                 doc.getFechaVencimiento().isBefore(doc.getFechaEmision()))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vencimiento anterior a emisión");
+        // Un documento vencido no puede aprobarse, aunque la petición no llegue desde la pantalla.
+        // Se revisa después de aplicar la fecha que pudo corregir el administrador.
+        if (entrada.resultado() == ResultadoRevision.APROBADO
+                && VigenciaDocumentosService.estado(doc, VigenciaDocumentosService.hoy())
+                   == VigenciaDocumentosService.EstadoVigencia.VENCIDO)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un documento vencido solo puede rechazarse");
         revisiones.save(RevisionDocumento.builder().documento(doc).administrador(admin)
                 .resultado(entrada.resultado()).observaciones(entrada.observaciones()).build());
         return respuesta(solicitud);

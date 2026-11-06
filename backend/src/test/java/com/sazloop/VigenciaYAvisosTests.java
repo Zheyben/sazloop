@@ -4,9 +4,12 @@ import com.sazloop.afiliacion.domain.AdministradorPlataforma;
 import com.sazloop.afiliacion.domain.DocumentoEstablecimiento.TipoDocumento;
 import com.sazloop.afiliacion.domain.EvaluacionAfiliacion;
 import com.sazloop.afiliacion.domain.RevisionDocumento;
+import com.sazloop.afiliacion.domain.SolicitudAfiliacion;
 import com.sazloop.afiliacion.dto.DecisionRequest;
+import com.sazloop.afiliacion.dto.ResolucionRequest;
 import com.sazloop.afiliacion.dto.RevisionRequest;
 import com.sazloop.afiliacion.repository.AdministradorPlataformaRepository;
+import com.sazloop.afiliacion.repository.DocumentoEstablecimientoRepository;
 import com.sazloop.afiliacion.service.RevisionAfiliacionService;
 import com.sazloop.afiliacion.service.SolicitudAfiliacionService;
 import com.sazloop.afiliacion.service.VigenciaDocumentosService;
@@ -43,6 +46,7 @@ import com.sazloop.transacciones.domain.Pago;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.server.ResponseStatusException;
@@ -77,6 +81,7 @@ class VigenciaYAvisosTests {
     @Autowired NotificacionService notificaciones;
     @Autowired EstablecimientoRepository establecimientos;
     @Autowired ImpactoCO2EvitadoRepository impactos;
+    @Autowired DocumentoEstablecimientoRepository documentosRepo;
 
     private static final byte[] PDF = "%PDF-1.4\nPrueba".getBytes(StandardCharsets.UTF_8);
 
@@ -199,6 +204,59 @@ class VigenciaYAvisosTests {
         assertTrue(aviso.mensaje().contains("3.00"));
         notificaciones.leerTodas(consumidor);
         assertTrue(notificaciones.listar(consumidor).stream().allMatch(NotificacionService.Aviso::leida));
+    }
+
+    /** El backend no deja aprobar un documento vencido, aunque la petición no venga de la pantalla. */
+    @Test
+    void unDocumentoVencidoNoPuedeAprobarseYLaDecisionNoQuedaAMedias() {
+        LocalDate hoy = VigenciaDocumentosService.hoy();
+        Long propietario = usuario();
+        var solicitud = solicitudEnRevision(propietario, "Local vencido");
+        Long documentoId = solicitud.documentos().getFirst().id();
+        // El documento vence mientras la solicitud espera la revisión.
+        var documento = documentosRepo.findById(documentoId).orElseThrow();
+        documento.setFechaVencimiento(hoy.minusDays(1));
+        documentosRepo.save(documento);
+        AdministradorPlataforma admin = admin();
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () ->
+                revision.resolver(admin, solicitud.id(), new ResolucionRequest(List.of(new ResolucionRequest.Documento(
+                        documentoId, RevisionDocumento.ResultadoRevision.APROBADO, null)), null)));
+        assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
+        assertEquals("Un documento vencido solo puede rechazarse", error.getReason());
+
+        // No quedó ninguna revisión guardada: si quedara, se usaría la aprobación anterior.
+        var rechazo = revision.resolver(admin, solicitud.id(), new ResolucionRequest(List.of(new ResolucionRequest.Documento(
+                documentoId, RevisionDocumento.ResultadoRevision.RECHAZADO, "Documento vencido")), null));
+        assertEquals(SolicitudAfiliacion.EstadoSolicitud.RECHAZADA, rechazo.estado());
+    }
+
+    /** Si el administrador corrige la fecha de vencimiento y queda en el pasado, tampoco puede aprobarlo. */
+    @Test
+    void corregirLaFechaAUnaYaVencidaImpideAprobar() {
+        LocalDate hoy = VigenciaDocumentosService.hoy();
+        var solicitud = solicitudEnRevision(usuario(), "Local fecha corregida");
+        Long documentoId = solicitud.documentos().getFirst().id();
+        AdministradorPlataforma admin = admin();
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () ->
+                revision.revisar(admin, documentoId, new RevisionRequest(RevisionDocumento.ResultadoRevision.APROBADO,
+                        null, null, null, null, hoy.minusDays(1))));
+        assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
+        assertEquals("Un documento vencido solo puede rechazarse", error.getReason());
+        assertEquals(hoy.plusDays(30), documentosRepo.findById(documentoId).orElseThrow().getFechaVencimiento());
+    }
+
+    private com.sazloop.afiliacion.dto.SolicitudResponse solicitudEnRevision(Long propietario, String nombreLocal) {
+        LocalDate hoy = VigenciaDocumentosService.hoy();
+        String ruc = Long.toString(ThreadLocalRandom.current().nextLong(10_000_000_000L, 100_000_000_000L));
+        empresas.registrarEmpresa(propietario, new EmpresaRequest("Empresa", "Comercio", ruc));
+        Long local = empresas.registrarEstablecimiento(propietario, new EstablecimientoRequest(nombreLocal,
+                null, null, new DireccionRequest("Lima", "Lima", "Surco", "Calle Cinco", null, null, null))).id();
+        var solicitud = solicitudes.adjuntar(propietario, local, TipoDocumento.CERTIFICADO_SANITARIO, "CS-9",
+                hoy.minusYears(1), hoy.plusDays(30), archivo());
+        solicitudes.enviar(propietario, local);
+        return solicitud;
     }
 
     private long avisos(Long usuarioId, TipoNotificacion tipo) {

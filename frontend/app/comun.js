@@ -53,18 +53,10 @@ export function aviso(texto, esError = false) {
   zona.className = esError ? 'error' : 'ok';
 }
 
-// Barra de navegación: muestra al usuario si hay sesión.
-export async function pintarNav(activa) {
-  const nav = document.querySelector('#nav');
-  const enlaces = [['catalogo.html', 'Explorar ofertas'], ['compras.html', 'Mis compras'], ['consumidor.html', 'Mi cuenta']];
-  nav.replaceChildren(
-    el('a', { href: '../index.html', className: 'marca', textContent: '✳ Sazloop.' }),
-    ...enlaces.map(([href, texto]) => el('a', { href, textContent: texto, ariaCurrent: href === activa ? 'page' : null }))
-  );
-  try {
-    const u = await solicitar('/sesion');
-    nav.append(el('span', { className: 'quien', textContent: u.nombres }));
-  } catch {
-    nav.append(el('a', { href: 'acceso-consumidor.html', className: 'quien', textContent: 'Ingresar' }));
-  }
+// Una tarjeta sirve hasta el último día de su mes de vencimiento.
+// Se usa la fecha local (hora de Perú), no UTC. `mes` llega como "AAAA-MM" desde <input type="month">.
+export function tarjetaVigente(mes) {
+  const hoy = new Date();
+  const actual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+  return Boolean(mes) && mes >= actual;
 }

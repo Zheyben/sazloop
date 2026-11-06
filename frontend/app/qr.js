@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, fechaHora, tamanios } from './comun.js';
+import { solicitar, el, dinero, fechaHora, tamanios, tarjetaVigente } from './comun.js';
 
 const params = new URLSearchParams(location.search);
 const ofertaId = Number(params.get('oferta'));
@@ -127,10 +127,8 @@ document.querySelector('#validarTarjetaQr').addEventListener('click', () => {
   const titular = form.elements.titular.value.trim();
   const vencimiento = form.elements.vencimiento.value;
   const cvv = form.elements.cvv.value.trim();
-  const ahora = new Date();
-  const mesActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
-  if (!/^[0-9]{13,19}$/.test(numero) || !titular || vencimiento <= mesActual || !/^[0-9]{3,4}$/.test(cvv)) {
-    mensaje.textContent = 'Revisa el número, titular, vencimiento futuro y CVV.';
+  if (!/^[0-9]{13,19}$/.test(numero) || !titular || !tarjetaVigente(vencimiento) || !/^[0-9]{3,4}$/.test(cvv)) {
+    mensaje.textContent = 'Revisa el número, titular, vencimiento y CVV o CVC.';
     return;
   }
   validado = true;

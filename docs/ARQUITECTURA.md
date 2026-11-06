@@ -13,7 +13,7 @@ Hay un único backend Spring Boot y una base relacional compartida: un monolito 
 | Web y validación | Spring Web MVC y Spring Validation |
 | Persistencia | Spring Data JPA; Hibernate gestiona las entidades |
 | Bases de datos | MySQL para persistencia local; H2 en memoria para desarrollo y pruebas aisladas |
-| Frontend | HTML, CSS propio y JavaScript con módulos ES; sin proceso de construcción de Node |
+| Frontend | HTML, CSS propio y JavaScript con módulos ES |
 | Recursos externos | SweetAlert2 desde jsDelivr y Animate.css desde cdnjs, en las páginas que los incluyen |
 | QR | `frontend/app/vendor/qrcode.mjs`, distribuido con su licencia MIT |
 

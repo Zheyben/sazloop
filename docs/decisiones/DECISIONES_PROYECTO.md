@@ -160,7 +160,7 @@ El impacto ambiental se registrará conceptualmente después de un recojo comple
 
 ## DEC-039 — Stack tecnológico principal
 
-Java 21, Spring Boot, Maven, Spring Data JPA y MySQL; HTML, CSS propio y JavaScript en el frontend. El POM declara Spring Boot 4.1.1; H2 sirve para desarrollo y pruebas. La inclusión histórica de Tailwind queda sustituida por D6 / DEC-056. Los detalles actuales se mantienen en Arquitectura.
+Java 21, Spring Boot, Maven, Spring Data JPA y MySQL; HTML, CSS propio y JavaScript en el frontend. El POM declara Spring Boot 4.1.1; H2 sirve para desarrollo y pruebas.
 
 ## DEC-040 — Identidad del proyecto
 
@@ -237,10 +237,6 @@ El catálogo actual filtra locales activos, pero su respuesta no incluye el indi
 ## DEC-055 — Conservar operaciones administrativas anteriores (D5)
 
 **Aprobada; conservación existente:** mantener temporalmente revisión y decisión separadas. La pantalla actual usa resolución conjunta. Las pruebas existentes y `DatosDemoH2` aún invocan servicios del recorrido anterior; no se ha establecido una lista completa de consumidores externos. [Arquitectura](../ARQUITECTURA.md) identifica las rutas. Su posible eliminación queda pendiente de evaluación de compatibilidad.
-
-## DEC-056 — CSS propio, sin Tailwind (D6)
-
-**Aprobada y reflejada en los requisitos:** Sazloop continúa con sus estilos CSS actuales y no utilizará Tailwind. Sustituye su inclusión en DEC-039 y en el requisito tecnológico anterior. La revisión del frontend y las dependencias no identificó integración técnica de Tailwind que retirar; si aparece alguna, se registrará su limpieza sin modificar código dentro de una tarea documental.
 
 ## Decisiones todavía abiertas
 

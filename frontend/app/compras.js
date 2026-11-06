@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, fechaHora, aviso, tamanios } from './comun.js';
+import { solicitar, el, dinero, fechaHora, aviso, tamanios, tarjetaVigente } from './comun.js';
 import { leerCarrito, guardarCarrito } from './portal.js';
 import { abrirResena } from './resenas-portal.js';
 
@@ -190,9 +190,8 @@ async function mostrarCarrito() {
   });
   validarTarjeta.addEventListener('click', () => {
     const digitos = numero.value.replace(/\s/g, '');
-    const mesActual = new Date().toISOString().slice(0, 7);
     if (!/^[0-9]{13,19}$/.test(digitos) || !titular.value.trim()
-        || !vencimiento.value || vencimiento.value < mesActual
+        || !tarjetaVigente(vencimiento.value)
         || !/^[0-9]{3,4}$/.test(cvv.value)) {
       mensajePago.textContent = 'Revisa el número, titular, vencimiento y CVV o CVC.';
       return;
