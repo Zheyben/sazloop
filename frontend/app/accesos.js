@@ -1,3 +1,5 @@
+import { esFalloDeRed, notificar, notificarExito } from './comun.js';
+
 const tipoAcceso = document.body.dataset.acceso;
 const mensaje = document.querySelector('#mensaje-acceso');
 const ingresoPersonal = document.querySelector('#ingreso-personal');
@@ -64,7 +66,9 @@ async function enviar(formulario, ruta, destino) {
         401: 'Revisa tus credenciales e intenta de nuevo.',
         409: 'La cuenta ya existe o no se puede completar la operación.'
       };
-      throw new Error(textos[respuesta.status] || 'No se pudo completar la operación.');
+      const error = new Error(textos[respuesta.status] || 'No se pudo completar la operación.');
+      error.status = respuesta.status;
+      throw error;
     }
     if (destino) {
       location.href = destino;
@@ -74,18 +78,37 @@ async function enviar(formulario, ruta, destino) {
       vistaRegistro(false);
       ingresoPersonal.elements.email.value = correo;
       aviso('Cuenta creada. Ya puedes iniciar sesión.');
+      notificarExito('Cuenta creada', 'Ya puedes iniciar sesión con el correo que registraste.');
     }
   } catch (error) {
-    if (error.message === 'Failed to fetch' || error.message.includes('Network')) {
-      Swal.fire({
-        title: '¡Ups! Sin conexión',
-        text: 'Parece que no tienes internet. Revisa tu conexión y vuelve a intentarlo.',
+    aviso(esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message, true);
+    const esSesion = ruta.endsWith('/sesion');
+    if (esFalloDeRed(error)) {
+      notificar({
         icon: 'error',
-        confirmButtonColor: '#183a2b', // Usa el verde oscuro de la marca Sazloop
-        confirmButtonText: 'Entendido'
+        title: 'Sin conexión',
+        text: 'Parece que no tienes internet. Revisa tu conexión y vuelve a intentarlo.'
+      });
+    } else if (esSesion) {
+      notificar({
+        icon: 'error',
+        title: 'No pudimos iniciar sesión',
+        text: error.status === 401
+          ? 'El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.'
+          : error.message
+      });
+    } else if (error.status === 409) {
+      notificar({
+        icon: 'warning',
+        title: 'Esta cuenta ya existe',
+        text: 'Ese correo ya está registrado. Inicia sesión o usa otro correo.'
       });
     } else {
-      aviso(error.message, true);
+      notificar({
+        icon: error.status === 400 ? 'warning' : 'error',
+        title: 'No se pudo crear la cuenta',
+        text: error.message
+      });
     }
   }
   finally { boton.disabled = false; }

@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, tamanios, aviso } from './comun.js';
+import { solicitar, el, dinero, tamanios, aviso, notificarError, notificarExito } from './comun.js';
 import { leerCarrito, guardarCarrito } from './portal.js';
 
 const filtrosPermitidos = ['distrito', 'direccion', 'precioMaximo', 'calificacionMinima'];
@@ -109,7 +109,7 @@ export function iniciarOfertas(usuario, limite = null) {
     } catch (error) {
       if (!lista.isConnected || turno !== busquedaActual) return;
       lista.replaceChildren();
-      aviso(error.message, true);
+      aviso(error.message, true, 'No se pudieron cargar las ofertas');
     }
   }
 
@@ -176,11 +176,17 @@ export function iniciarOfertas(usuario, limite = null) {
       actualizarTotal();
       form.addEventListener('submit', e => {
         e.preventDefault();
-        if (!actualizarTotal()) { avisoDetalle.textContent = 'Revisa las cantidades disponibles.'; return; }
+        if (!actualizarTotal()) {
+          avisoDetalle.textContent = 'Revisa las cantidades disponibles.';
+          notificarError('Revisa las cantidades disponibles.', 'No se pudo añadir');
+          return;
+        }
         const lineas = o.variantes.map(v => ({ varianteId: v.id, cantidad: Number(form.elements['v' + v.id].value) }))
           .filter(l => l.cantidad > 0);
         if (!lineas.length || lineas.some(l => !Number.isInteger(l.cantidad))) {
-          avisoDetalle.textContent = 'Elige al menos una unidad válida.'; return;
+          avisoDetalle.textContent = 'Elige al menos una unidad válida.';
+          notificarError('Elige al menos una unidad válida.', 'No se pudo añadir');
+          return;
         }
         const previos = leerCarrito(usuario.id);
         const acumuladas = new Map();
@@ -191,12 +197,15 @@ export function iniciarOfertas(usuario, limite = null) {
         for (const linea of lineas) acumuladas.set(linea.varianteId,
           (acumuladas.get(linea.varianteId) || 0) + linea.cantidad);
         if (o.variantes.some(v => (acumuladas.get(v.id) || 0) > v.stockDisponible)) {
-          avisoDetalle.textContent = 'La cantidad supera las unidades disponibles.'; return;
+          avisoDetalle.textContent = 'La cantidad supera las unidades disponibles.';
+          notificarError('La cantidad supera las unidades disponibles.', 'No se pudo añadir');
+          return;
         }
         guardarCarrito(usuario.id, [...previos, {
           clave: crypto.randomUUID(), ofertaId: o.id, lineas
         }]);
         detalle.close();
+        notificarExito('Añadido al carrito', `${o.pack} ya está en tu carrito.`);
       });
       const restricciones = o.restricciones || [];
       const opcionesDieta = [
@@ -240,6 +249,6 @@ export function iniciarOfertas(usuario, limite = null) {
           el('div', { className: 'detalle-pie-accion' }, botonAgregar, avisoDetalle)));
       detalle.setAttribute('aria-labelledby', 'detalle-titulo');
       detalle.showModal();
-    } catch (error) { if (detalle.isConnected) aviso(error.message, true); }
+    } catch (error) { if (detalle.isConnected) aviso(error.message, true, 'No se pudo abrir el pack'); }
   }
 }

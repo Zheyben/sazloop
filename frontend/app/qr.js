@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, fechaHora, tamanios, tarjetaVigente } from './comun.js';
+import { solicitar, el, dinero, fechaHora, tamanios, esFalloDeRed, notificar, notificarError, notificarExito, notificarBreve, tarjetaVigente } from './comun.js';
 
 const params = new URLSearchParams(location.search);
 const ofertaId = Number(params.get('oferta'));
@@ -17,6 +17,11 @@ async function iniciar() {
   }
   if (!Number.isInteger(ofertaId) || ofertaId < 1 || !token) {
     zona.textContent = 'El enlace QR no es válido.';
+    notificar({
+      icon: 'error',
+      title: 'Enlace no válido',
+      text: 'Este código QR no corresponde a una oferta de Sazloop.'
+    });
     return;
   }
   try {
@@ -54,7 +59,10 @@ async function iniciar() {
     form.hidden = false;
     actualizarPago();
     actualizarTotal();
-  } catch (error) { zona.textContent = error.message; }
+  } catch (error) {
+    zona.textContent = esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message;
+    notificarError(error, 'No se pudo abrir la oferta');
+  }
 }
 
 function lineas() {
@@ -102,9 +110,15 @@ for (const boton of document.querySelectorAll('#metodosQr .carrito-metodo')) {
 form.elements.terminos.addEventListener('change', () => {
   document.querySelector('#confirmarQr').disabled = !validado || !form.elements.terminos.checked;
 });
+function avisoQr(texto, error = false) {
+  mensaje.textContent = texto;
+  if (!texto) return;
+  if (error) notificarError(texto, 'Revisa el pago');
+  else notificarBreve('success', texto);
+}
 document.querySelector('#siguienteYapeQr').addEventListener('click', () => {
   if (!/^9[0-9]{8}$/.test(form.elements.telefonoYape.value.trim())) {
-    mensaje.textContent = 'Ingresa un número peruano que empiece por 9.';
+    avisoQr('Ingresa un número peruano que empiece por 9.', true);
     return;
   }
   document.querySelector('#codigoYapeQr').hidden = false;
@@ -113,14 +127,14 @@ document.querySelector('#siguienteYapeQr').addEventListener('click', () => {
 });
 document.querySelector('#validarYapeQr').addEventListener('click', () => {
   if (!/^[0-9]{6}$/.test(form.elements.codigoYape.value.trim())) {
-    mensaje.textContent = 'Ingresa seis dígitos.';
+    avisoQr('Ingresa seis dígitos.', true);
     return;
   }
   validado = true;
   form.elements.telefonoYape.readOnly = true;
   form.elements.codigoYape.readOnly = true;
   document.querySelector('#confirmarQr').disabled = !form.elements.terminos.checked;
-  mensaje.textContent = 'Yape validado.';
+  avisoQr('Yape validado. Acepta los términos para continuar.');
 });
 document.querySelector('#validarTarjetaQr').addEventListener('click', () => {
   const numero = form.elements.numeroTarjeta.value.replace(/\s/g, '');
@@ -128,13 +142,13 @@ document.querySelector('#validarTarjetaQr').addEventListener('click', () => {
   const vencimiento = form.elements.vencimiento.value;
   const cvv = form.elements.cvv.value.trim();
   if (!/^[0-9]{13,19}$/.test(numero) || !titular || !tarjetaVigente(vencimiento) || !/^[0-9]{3,4}$/.test(cvv)) {
-    mensaje.textContent = 'Revisa el número, titular, vencimiento y CVV o CVC.';
+    avisoQr('Revisa el número, titular, vencimiento y CVV o CVC.', true);
     return;
   }
   validado = true;
   for (const nombre of ['numeroTarjeta', 'titular', 'vencimiento', 'cvv']) form.elements[nombre].readOnly = true;
   document.querySelector('#confirmarQr').disabled = !form.elements.terminos.checked;
-  mensaje.textContent = 'Tarjeta validada.';
+  avisoQr('Tarjeta validada. Acepta los términos para continuar.');
 });
 form.addEventListener('submit', async evento => {
   evento.preventDefault();
@@ -142,7 +156,7 @@ form.addEventListener('submit', async evento => {
   if (!validado || !form.elements.terminos.checked ||
       !seleccion.some(l => l.cantidad > 0) ||
       seleccion.some(l => !Number.isInteger(l.cantidad) || l.cantidad < 0 || l.cantidad > l.variante.stockDisponible)) {
-    mensaje.textContent = 'Revisa el pago y las cantidades.';
+    avisoQr('Revisa el pago y las cantidades.', true);
     return;
   }
   const medioPago = form.elements.medioPago.value;
@@ -166,8 +180,15 @@ form.addEventListener('submit', async evento => {
       medioPago === 'EFECTIVO' ? el('p', { textContent: `La reserva vence: ${fechaHora(respuesta.venceEn)}` })
         : el('p', { textContent: `Boleta: ${respuesta.numeroBoleta}` }),
       el('a', { href: 'compras.html', textContent: 'Ver mis compras' }));
+    notificarExito(
+      medioPago === 'EFECTIVO' ? 'Reserva lista' : 'Compra confirmada',
+      medioPago === 'EFECTIVO'
+        ? `Entrega el efectivo al trabajador. Tu código es ${respuesta.codigoRecojo}.`
+        : `Tu código de recojo es ${respuesta.codigoRecojo}.`
+    );
   } catch (error) {
-    mensaje.textContent = error.message;
+    mensaje.textContent = esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message;
+    notificarError(error, 'No se pudo confirmar la compra');
     boton.disabled = false;
   }
 });

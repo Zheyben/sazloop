@@ -1,5 +1,5 @@
 // panel.js — piezas compartidas por los portales de trabajador, empresa y administración.
-import { el } from './comun.js';
+import { el, esFalloDeRed, notificarError, notificarExito } from './comun.js';
 
 const trazos = {
   marca: 'M12 2v20 M2 12h20 M4.9 4.9l14.2 14.2 M19.1 4.9 4.9 19.1',
@@ -50,16 +50,22 @@ export function crearNavegacion(alMostrar) {
   return mostrar;
 }
 
-/** Mensaje general de la vista (verde para confirmaciones, rojo para errores). */
-export function mensaje(texto, esError = false) {
+/** Mensaje general de la vista y alerta: verde para confirmaciones, rojo para errores. */
+export function mensaje(texto, esError = false, titulo) {
   const zona = document.querySelector('#mensaje');
-  zona.textContent = texto;
-  zona.className = texto ? (esError ? 'error' : 'ok') : '';
+  if (zona) {
+    zona.textContent = esFalloDeRed(texto) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : texto;
+    zona.className = texto ? (esError ? 'error' : 'ok') : '';
+  }
+  if (!texto) return;
+  if (esError) notificarError(texto, titulo);
+  else notificarExito(titulo || 'Listo', texto);
 }
 
-export function estadoEn(zona, texto, esError = false) {
-  zona.textContent = texto;
+export function estadoEn(zona, texto, esError = false, titulo) {
+  zona.textContent = esFalloDeRed(texto) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : texto;
   zona.className = `estado-formulario ${esError ? 'error' : 'ok'}`;
+  if (texto && esError) notificarError(texto, titulo);
 }
 
 export function insignia(texto, tono = '') {

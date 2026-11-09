@@ -10,7 +10,7 @@ let establecimientos = [];
 pintarIconos();
 const mostrar = crearNavegacion((vista, datos) => {
   const cargas = { solicitudes: cargarSolicitudes, 'solicitudes:detalle': () => abrirSolicitud(datos), establecimientos: cargarEstablecimientos };
-  cargas[vista]?.().catch(error => mensaje(error.message, true));
+  cargas[vista]?.().catch(error => mensaje(error.message, true, 'No se pudo cargar la información'));
 });
 
 let admin;
@@ -138,7 +138,7 @@ function formularioResolucion(s) {
     const pendientes = filas.filter(f => !f.previa);
     const sinMotivo = pendientes.find(f => f.rechazar.checked && !f.observaciones.value.trim());
     if (sinMotivo) {
-      estadoEn(estado, `Indica por qué se rechaza: ${tiposDocumento[sinMotivo.doc.tipo] || sinMotivo.doc.tipo}.`, true);
+      estadoEn(estado, `Indica por qué se rechaza: ${tiposDocumento[sinMotivo.doc.tipo] || sinMotivo.doc.tipo}.`, true, 'Falta el motivo');
       sinMotivo.observaciones.focus();
       return;
     }
@@ -154,9 +154,10 @@ function formularioResolucion(s) {
       mensaje(aprobo
         ? (s.renovacion ? 'Renovación aprobada. El propietario fue notificado.'
           : 'Local aprobado. El propietario ya puede crear la cuenta del trabajador.')
-        : 'Solicitud rechazada. El propietario recibirá el motivo.');
+        : 'Solicitud rechazada. El propietario recibirá el motivo.',
+        false, aprobo ? 'Decisión guardada' : 'Solicitud rechazada');
     } catch (error) {
-      estadoEn(estado, error.message, true);
+      estadoEn(estado, error.message, true, 'No se pudo guardar la decisión');
       boton.disabled = false;
     }
   });

@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, fechaHora, aviso, tamanios, tarjetaVigente } from './comun.js';
+import { solicitar, el, dinero, fechaHora, aviso, tamanios, esFalloDeRed, notificarError, notificarExito, notificarBreve, confirmarAccion, tarjetaVigente } from './comun.js';
 import { leerCarrito, guardarCarrito } from './portal.js';
 import { abrirResena } from './resenas-portal.js';
 
@@ -163,10 +163,16 @@ async function mostrarCarrito() {
     mensajePago.textContent = '';
     actualizarConfirmacion();
   }
+  function avisoPago(texto, error = false) {
+    mensajePago.textContent = texto;
+    if (!texto) return;
+    if (error) notificarError(texto, 'Revisa el pago');
+    else notificarBreve('success', texto);
+  }
   medio.addEventListener('change', resetPago);
   siguiente.addEventListener('click', () => {
     if (!/^9[0-9]{8}$/.test(telefono.value.trim())) {
-      mensajePago.textContent = 'Ingresa un número peruano de nueve dígitos que empiece por 9.';
+      avisoPago('Ingresa un número peruano de nueve dígitos que empiece por 9.', true);
       return;
     }
     pasoCodigo.hidden = false;
@@ -176,7 +182,7 @@ async function mostrarCarrito() {
   });
   validarYape.addEventListener('click', () => {
     if (!/^[0-9]{6}$/.test(codigo.value.trim())) {
-      mensajePago.textContent = 'Ingresa los seis dígitos del código.';
+      avisoPago('Ingresa los seis dígitos del código.', true);
       return;
     }
     telefono.readOnly = true;
@@ -185,7 +191,7 @@ async function mostrarCarrito() {
     validarYape.disabled = true;
     pagoValidado = true;
     terminos.disabled = false;
-    mensajePago.textContent = 'Datos validados. Acepta los términos para continuar.';
+    avisoPago('Yape validado. Acepta los términos para continuar.');
     actualizarConfirmacion();
   });
   validarTarjeta.addEventListener('click', () => {
@@ -193,14 +199,14 @@ async function mostrarCarrito() {
     if (!/^[0-9]{13,19}$/.test(digitos) || !titular.value.trim()
         || !tarjetaVigente(vencimiento.value)
         || !/^[0-9]{3,4}$/.test(cvv.value)) {
-      mensajePago.textContent = 'Revisa el número, titular, vencimiento y CVV o CVC.';
+      avisoPago('Revisa el número, titular, vencimiento y CVV o CVC.', true);
       return;
     }
     for (const campo of [numero, titular, vencimiento, cvv]) campo.readOnly = true;
     validarTarjeta.disabled = true;
     pagoValidado = true;
     terminos.disabled = false;
-    mensajePago.textContent = 'Datos validados. Acepta los términos para continuar.';
+    avisoPago('Tarjeta validada. Acepta los términos para continuar.');
     actualizarConfirmacion();
   });
   terminos.addEventListener('change', actualizarConfirmacion);
@@ -257,7 +263,10 @@ async function mostrarCarrito() {
     evento.preventDefault();
     if (!pagoValidado || !terminos.checked) return;
     const guardados = pedidoActualizado();
-    if (!guardados) return;
+    if (!guardados) {
+      notificarError(mensaje.textContent || 'Revisa el carrito antes de continuar.', 'No se puede confirmar la compra');
+      return;
+    }
     confirmar.disabled = true;
     try {
       const compras = await solicitar('/compras/lote', { method: 'POST', body: JSON.stringify({
@@ -275,8 +284,10 @@ async function mostrarCarrito() {
           el('p', { textContent: `Código de recojo: ${compra.codigoRecojo}` }),
           el('p', { textContent: `Recojo: ${horarioCompra(compra)}` })))));
       mostrarHistorial();
+      notificarExito('Compra confirmada', 'Cada pedido ya tiene su boleta y su código de recojo.');
     } catch (error) {
-      mensaje.textContent = error.message;
+      mensaje.textContent = esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message;
+      notificarError(error, 'No se pudo confirmar la compra');
       actualizarConfirmacion();
     }
   });
@@ -297,11 +308,12 @@ async function mostrarCarrito() {
 
 async function cancelarCompra(compra) {
   const reembolso = dinero(Number(compra.total) * 0.5);
-  if (!await confirmarDialogo('¿Cancelar esta compra?', `Recibirás ${reembolso} de reembolso (50 % del total) y el código de recojo dejará de ser válido.`, 'Sí, cancelar compra')) return;
+  if (!await confirmarAccion('¿Cancelar esta compra?', `Recibirás ${reembolso} de reembolso (50 % del total) y el código de recojo dejará de ser válido.`, 'Sí, cancelar compra')) return;
   try {
     await solicitar(`/compras/${compra.reservaId}/cancelar`, { method: 'POST' });
+    notificarExito('Compra cancelada', `El reembolso de ${reembolso} quedó registrado.`);
     await mostrarHistorial();
-  } catch (error) { aviso(error.message, true); }
+  } catch (error) { aviso(error.message, true, 'No se pudo cancelar la compra'); }
 }
 
 async function mostrarHistorial() {
@@ -326,7 +338,7 @@ async function mostrarHistorial() {
           onclick: () => abrirResena(c, mostrarHistorial) }) : null))
       : [el('div', { className: 'estado-vacio', textContent: 'Aún no tienes compras realizadas.' })]));
     aviso('');
-  } catch (error) { if (lista.isConnected) aviso(error.message, true); }
+  } catch (error) { if (lista.isConnected) aviso(error.message, true, 'No se pudieron cargar tus compras'); }
 }
 
 /** Contador +/− de una variante dentro de un pedido del carrito. */
@@ -348,17 +360,3 @@ function filaVariante(variante, input) {
       el('button', { type: 'button', className: 'detalle-cantidad-boton detalle-mas', ariaLabel: `Añadir una unidad de ${nombre}`, onclick: () => cambiar(1) })));
 }
 
-/** Confirmación con el diseño de la plataforma, en lugar de la ventana nativa del navegador. */
-function confirmarDialogo(titulo, texto, aceptar) {
-  return new Promise(resolver => {
-    const dialogo = el('dialog', { className: 'dialogo-confirmar' });
-    const cerrar = valor => { dialogo.close(); dialogo.remove(); resolver(valor); };
-    dialogo.append(el('h2', { textContent: titulo }), el('p', { textContent: texto }),
-      el('div', { className: 'dialogo-acciones' },
-        el('button', { type: 'button', className: 'secundario', textContent: 'Volver', onclick: () => cerrar(false) }),
-        el('button', { type: 'button', textContent: aceptar, onclick: () => cerrar(true) })));
-    dialogo.addEventListener('cancel', evento => { evento.preventDefault(); cerrar(false); });
-    document.body.append(dialogo);
-    dialogo.showModal();
-  });
-}

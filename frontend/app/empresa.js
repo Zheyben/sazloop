@@ -13,7 +13,7 @@ let vistaActual = ['resumen', null];
 const mostrar = crearNavegacion((vista, datos) => {
   vistaActual = [vista, datos];
   const cargas = { resumen: cargarResumen, locales: cargarLocales, 'locales:detalle': () => abrirLocal(datos), avisos: cargarAvisos };
-  cargas[vista]?.().catch(error => mensaje(error.message, true));
+  cargas[vista]?.().catch(error => mensaje(error.message, true, 'No se pudo cargar la información'));
 });
 
 let usuario;
@@ -50,12 +50,12 @@ document.querySelector('#form-empresa').addEventListener('submit', async evento 
     iniciarEmpresa();
     mostrar('locales');
     abrirFormularioLocal();
-    mensaje('Empresa registrada. Ahora registra tu primer local.');
-  } catch (error) { estadoEn(estado, error.message, true); }
+    mensaje('Empresa registrada. Ahora registra tu primer local.', false, 'Empresa registrada');
+  } catch (error) { estadoEn(estado, error.message, true, 'No se pudo registrar la empresa'); }
 });
 
 // ---------- Resumen ----------
-document.querySelector('#actualizar-resumen').addEventListener('click', () => cargarResumen().catch(e => mensaje(e.message, true)));
+document.querySelector('#actualizar-resumen').addEventListener('click', () => cargarResumen().catch(e => mensaje(e.message, true, 'No se pudo actualizar el resumen')));
 
 async function cargarResumen() {
   // Cada consulta es independiente: si una falla, el resto del resumen se sigue mostrando.
@@ -150,8 +150,8 @@ formLocal.addEventListener('submit', async evento => {
     formLocal.reset();
     formLocal.hidden = true;
     mostrar('locales:detalle', creado.id);
-    mensaje('Local registrado. Ahora adjunta sus documentos y envía la solicitud.');
-  } catch (error) { estadoEn(formLocal.querySelector('.estado-formulario'), error.message, true); }
+    mensaje('Local registrado. Ahora adjunta sus documentos y envía la solicitud.', false, 'Local registrado');
+  } catch (error) { estadoEn(formLocal.querySelector('.estado-formulario'), error.message, true, 'No se pudo registrar el local'); }
 });
 
 async function cargarLocales() {
@@ -173,7 +173,7 @@ async function cargarLocales() {
       el('button', { type: 'button', textContent: 'Gestionar', onclick: () => mostrar('locales:detalle', local.id) })))));
 }
 
-async function abrirLocal(id, aviso = '') {
+async function abrirLocal(id, aviso = '', titulo) {
   detalle.replaceChildren(el('p', { className: 'nota', textContent: 'Cargando el local…' }));
   const [doc, locales] = await Promise.all([
     solicitar(`/establecimientos/${id}/documentacion`), solicitar('/empresas/actual/establecimientos')]);
@@ -195,7 +195,7 @@ async function abrirLocal(id, aviso = '') {
       ...(aprobado ? seccionVigentes(doc, id) : seccionAfiliacion(doc, id))),
     el('section', { className: 'tarjeta-panel', style: 'margin-top:1rem' },
       el('h3', { textContent: 'Cuenta del trabajador' }), ...seccionCuenta(local)));
-  if (aviso) mensaje(aviso);
+  if (aviso) mensaje(aviso, false, titulo);
 }
 
 function tablaDocumentos(localId, documentos) {
@@ -275,9 +275,9 @@ function formularioDocumento(localId, tipos, renovacion) {
     boton.disabled = true;
     try {
       await solicitar(`/establecimientos/${localId}/documentos`, { method: 'POST', body: datos });
-      await abrirLocal(localId, 'Documento adjuntado. Puedes añadir otro o enviar la solicitud.');
+      await abrirLocal(localId, 'Documento adjuntado. Puedes añadir otro o enviar la solicitud.', 'Documento adjuntado');
     } catch (error) {
-      estadoEn(formulario.querySelector('.estado-formulario'), error.message, true);
+      estadoEn(formulario.querySelector('.estado-formulario'), error.message, true, 'No se pudo adjuntar el documento');
       boton.disabled = false;
     }
   });
@@ -290,8 +290,8 @@ function botonEnviar(localId, texto) {
     boton.disabled = true;
     try {
       await solicitar(`/establecimientos/${localId}/solicitud/enviar`, { method: 'POST' });
-      await abrirLocal(localId, 'Enviado a revisión. Te avisaremos el resultado en Notificaciones.');
-    } catch (error) { estadoEn(estado, error.message, true); boton.disabled = false; }
+      await abrirLocal(localId, 'Enviado a revisión. Te avisaremos el resultado en Notificaciones.', 'Enviado a revisión');
+    } catch (error) { estadoEn(estado, error.message, true, 'No se pudo enviar la solicitud'); boton.disabled = false; }
   } });
   return el('div', {}, el('div', { className: 'acciones-formulario' }, boton), estado);
 }
@@ -316,8 +316,8 @@ function seccionCuenta(local) {
     evento.preventDefault();
     try {
       await solicitar(`/establecimientos/${local.id}/cuenta`, { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(formulario))) });
-      await abrirLocal(local.id, 'Cuenta creada. Comparte el usuario y la contraseña con el personal del local.');
-    } catch (error) { estadoEn(formulario.querySelector('.estado-formulario'), error.message, true); }
+      await abrirLocal(local.id, 'Cuenta creada. Comparte el usuario y la contraseña con el personal del local.', 'Cuenta creada');
+    } catch (error) { estadoEn(formulario.querySelector('.estado-formulario'), error.message, true, 'No se pudo crear la cuenta'); }
   });
   return [formulario];
 }

@@ -1,4 +1,4 @@
-import { solicitar } from './comun.js';
+import { solicitar, esFalloDeRed, notificar, notificarExito } from './comun.js';
 
 export function montarPerfil(usuario) {
   const formulario = document.querySelector('#form-perfil');
@@ -37,22 +37,29 @@ export function montarPerfil(usuario) {
   });
   if (usuario.tieneFoto) mostrarFoto();
 
-  function estado(texto, error = false) {
-    // Si detecta falla de red, lanza el SweetAlert y detiene la función
-    if (texto === 'Failed to fetch' || texto.includes('Network') || texto.includes('NetworkError')) {
-      Swal.fire({
-        title: '¡Ups! Sin conexión',
-        text: 'Parece que no tienes internet. Revisa tu red y vuelve a intentarlo.',
+  function estado(texto, error = false, titulo) {
+    if (mensaje) {
+      mensaje.textContent = esFalloDeRed(texto) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : texto;
+      mensaje.className = error ? 'error' : 'ok';
+    }
+    if (esFalloDeRed(texto)) {
+      notificar({
         icon: 'error',
-        confirmButtonColor: '#183a2b',
-        confirmButtonText: 'Entendido'
+        title: 'Sin conexión',
+        text: 'Parece que no tienes internet. Revisa tu red y vuelve a intentarlo.'
       });
       return;
     }
-
-    // Si es un error normal (ej. contraseña corta), lo pinta normal en el HTML
-    mensaje.textContent = texto;
-    mensaje.className = error ? 'error' : 'ok';
+    if (error) {
+      const esAviso = /elige|revisa|ingresa|corta|mínimo|minimo/i.test(texto);
+      notificar({
+        icon: esAviso ? 'warning' : 'error',
+        title: titulo || (esAviso ? 'Revisa la información' : 'No se pudo guardar'),
+        text: texto
+      });
+      return;
+    }
+    notificarExito(titulo || 'Perfil actualizado', texto);
   }
 
   function mostrarFoto() {
@@ -77,8 +84,8 @@ export function montarPerfil(usuario) {
       pintarDatos();
       formulario.hidden = true;
       document.querySelector('#datos-perfil').hidden = false;
-      estado('Datos actualizados.');
-    } catch (error) { estado(error.message, true); }
+      estado('Tus datos ya quedaron guardados.', false, 'Datos actualizados');
+    } catch (error) { estado(error.message, true, 'No se pudieron guardar tus datos'); }
     finally { boton.disabled = false; }
   });
 
@@ -93,8 +100,8 @@ export function montarPerfil(usuario) {
       });
       form.reset();
       form.hidden = true;
-      estado('Contraseña actualizada.');
-    } catch (error) { estado(error.message, true); }
+      estado('Úsala la próxima vez que inicies sesión.', false, 'Contraseña actualizada');
+    } catch (error) { estado(error.message, true, 'No se pudo cambiar la contraseña'); }
     finally { boton.disabled = false; }
   });
 
@@ -103,7 +110,7 @@ export function montarPerfil(usuario) {
     const form = evento.currentTarget;
     const archivo = form.elements.archivo.files[0];
     if (!archivo || archivo.size > 2_000_000 || !['image/png', 'image/jpeg'].includes(archivo.type)) {
-      estado('Elige una foto PNG o JPG de hasta 2 MB.', true);
+      estado('Elige una foto PNG o JPG de hasta 2 MB.', true, 'Revisa la foto');
       return;
     }
     const boton = form.querySelector('button[type="submit"]');
@@ -118,8 +125,8 @@ export function montarPerfil(usuario) {
       }));
       form.reset();
       form.hidden = true;
-      estado('Foto actualizada.');
-    } catch (error) { estado(error.message, true); }
+      estado('Ya se ve en tu perfil.', false, 'Foto actualizada');
+    } catch (error) { estado(error.message, true, 'No se pudo actualizar la foto'); }
     finally { boton.disabled = false; }
   });
 }

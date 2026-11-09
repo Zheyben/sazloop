@@ -1,4 +1,4 @@
-import { solicitar, el } from './comun.js';
+import { solicitar, el, notificarError } from './comun.js';
 
 const rutas = [
   ['consumidor.html', 'Inicio', 'inicio'],
@@ -119,8 +119,14 @@ export async function iniciarPortal(activa) {
       await solicitar('/sesion', { method: 'DELETE' });
       guardarCarrito(usuario.id, null);
       location.href = 'acceso-consumidor.html';
-    } catch {
+    } catch (error) {
       perfil.open = false;
+      if (error.status === 401) {
+        guardarCarrito(usuario.id, null);
+        location.href = 'acceso-consumidor.html';
+        return;
+      }
+      notificarError(error, 'No se pudo cerrar la sesión');
     }
   });
   document.addEventListener('click', e => { if (!perfil.contains(e.target)) perfil.open = false; });

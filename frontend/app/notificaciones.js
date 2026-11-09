@@ -29,12 +29,12 @@ async function cargar() {
           a.leida ? null : el('button', { type: 'button', className: 'secundario', textContent: 'Marcar como leída',
             onclick: () => marcar(`/notificaciones/${a.id}/leer`) }))))));
     aviso('');
-  } catch (error) { if (zona.isConnected) aviso(error.message, true); }
+  } catch (error) { if (zona.isConnected) aviso(error.message, true, 'No se pudieron cargar las notificaciones'); }
 }
 
 async function marcar(ruta) {
   try {
     await solicitar(ruta, { method: 'POST' });
     await cargar();
-  } catch (error) { aviso(error.message, true); }
+  } catch (error) { aviso(error.message, true, 'No se pudo actualizar la notificación'); }
 }

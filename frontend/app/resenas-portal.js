@@ -1,4 +1,4 @@
-import { solicitar, el } from './comun.js';
+import { solicitar, el, esFalloDeRed, notificarError, notificarExito } from './comun.js';
 
 const TEXTOS = ['Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
 
@@ -63,9 +63,11 @@ export function abrirResena(compra, alTerminar = () => {}) {
     try {
       await solicitar(ruta, { method: 'POST', ...(datos ? { body: JSON.stringify(datos) } : {}) });
       dialogo.close();
+      if (datos) await notificarExito('Gracias por tu reseña', 'Tu calificación ya quedó registrada.');
       await alTerminar();
     } catch (error) {
-      mensaje.textContent = error.message;
+      mensaje.textContent = esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message;
+      notificarError(error, datos ? 'No se pudo enviar la reseña' : 'No se pudo omitir la reseña');
     } finally {
       enviando = false;
       cerrar.disabled = false;
@@ -79,6 +81,7 @@ export function abrirResena(compra, alTerminar = () => {}) {
     const calificacion = Number(form.elements.calificacion.value);
     if (!calificacion) {
       mensaje.textContent = 'Elige de 1 a 5 estrellas para enviar tu reseña.';
+      notificarError('Elige de 1 a 5 estrellas para enviar tu reseña.', 'Falta la calificación');
       return;
     }
     terminar(`/compras/${compra.reservaId}/resena`, { calificacion, comentario: form.elements.comentario.value.trim() });

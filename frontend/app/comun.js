@@ -46,11 +46,112 @@ export const dinero = n => `S/ ${Number(n).toFixed(2)}`;
 export const fechaHora = s => new Date(s).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 export const tamanios = { PEQUENO: 'Pequeño', MEDIANO: 'Mediano', GRANDE: 'Grande' };
 
-// Aviso arriba de la página (verde = ok, rojo = error).
-export function aviso(texto, esError = false) {
+const COLOR_BOTON = '#183a2b';
+
+export function esFalloDeRed(error) {
+  const texto = typeof error === 'string' ? error : error?.message || '';
+  return /Failed to fetch|NetworkError|Network request failed|Load failed|internet connection|Network/i.test(texto);
+}
+
+function textoDe(error) {
+  return typeof error === 'string' ? error : error?.message || 'Ocurrió un error inesperado. Intenta de nuevo.';
+}
+
+function textoVisible(texto) {
+  return esFalloDeRed(texto) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : texto;
+}
+
+function dialogoAbierto() {
+  return document.querySelector('dialog[open]');
+}
+
+/** Alerta modal de SweetAlert2, con el verde de la marca. */
+export function notificar({ icon = 'info', title, text, confirmButtonText } = {}) {
+  const aviso = [title, text].filter(Boolean).join('\n');
+  if (!globalThis.Swal) {
+    if (icon === 'success') return Promise.resolve({ isConfirmed: true });
+    alert(aviso);
+    return Promise.resolve({ isConfirmed: true });
+  }
+  const dialogo = dialogoAbierto();
+  return Swal.fire({
+    icon,
+    title,
+    text,
+    confirmButtonText: confirmButtonText || (icon === 'success' ? 'Listo' : 'Entendido'),
+    confirmButtonColor: COLOR_BOTON,
+    cancelButtonColor: '#6b7280',
+    heightAuto: false,
+    ...(dialogo ? { target: dialogo } : {})
+  });
+}
+
+export function notificarError(error, titulo) {
+  const texto = textoDe(error);
+  if (esFalloDeRed(texto)) {
+    return notificar({
+      icon: 'error',
+      title: 'Sin conexión',
+      text: 'Parece que no tienes internet. Revisa tu conexión y vuelve a intentarlo.'
+    });
+  }
+  const esAviso = /revisa|elige|ingresa|incluye|indica|acepta|quita|supera|al menos|no puede|válid/i.test(texto);
+  return notificar({
+    icon: esAviso ? 'warning' : 'error',
+    title: titulo || (esAviso ? 'Revisa la información' : 'No se pudo completar'),
+    text: texto
+  });
+}
+
+export function notificarExito(titulo, texto) {
+  return notificar({ icon: 'success', title: titulo, text: texto });
+}
+
+/** Confirmación breve, sin tapar el formulario. */
+export function notificarBreve(icon, title) {
+  if (!globalThis.Swal) return notificar({ icon, title });
+  return Swal.fire({
+    icon,
+    title,
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 2800,
+    timerProgressBar: true,
+    heightAuto: false
+  });
+}
+
+/** Pregunta de sí o no. Devuelve true solo si la persona confirma. */
+export function confirmarAccion(titulo, texto, aceptar = 'Sí, continuar') {
+  if (!globalThis.Swal) return Promise.resolve(confirm(`${titulo}\n\n${texto}`));
+  const dialogo = dialogoAbierto();
+  return Swal.fire({
+    icon: 'warning',
+    title: titulo,
+    text: texto,
+    showCancelButton: true,
+    confirmButtonText: aceptar,
+    cancelButtonText: 'Volver',
+    confirmButtonColor: COLOR_BOTON,
+    cancelButtonColor: '#6b7280',
+    reverseButtons: true,
+    focusCancel: true,
+    heightAuto: false,
+    ...(dialogo ? { target: dialogo } : {})
+  }).then(resultado => resultado.isConfirmed);
+}
+
+// Aviso arriba de la página (verde = ok, rojo = error) y alerta según el caso.
+export function aviso(texto, esError = false, titulo) {
   const zona = document.querySelector('#mensaje');
-  zona.textContent = texto;
-  zona.className = esError ? 'error' : 'ok';
+  if (zona) {
+    zona.textContent = textoVisible(texto);
+    zona.className = esError ? 'error' : 'ok';
+  }
+  if (!texto) return;
+  if (esError) notificarError(texto, titulo);
+  else notificarExito(titulo || 'Listo', texto);
 }
 
 // Una tarjeta sirve hasta el último día de su mes de vencimiento.

@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, tamanios } from './comun.js';
+import { solicitar, el, dinero, tamanios, notificar, notificarError, esFalloDeRed } from './comun.js';
 import {
   pintarIconos, crearNavegacion, mensaje, estadoEn, insignia, banda, vacio, cifra, tabla,
   rangoHorario, hora, fecha, filasDieta
@@ -45,7 +45,7 @@ async function cargar() {
   try {
     [resumen, packs] = await Promise.all([solicitar('/local/resumen'), solicitar('/local/packs')]);
   } catch (error) {
-    mensaje(error.message, true);
+    mensaje(error.message, true, 'No se pudo cargar el local');
     return;
   }
   document.querySelector('#titulo-panel').textContent = resumen.establecimiento;
@@ -229,16 +229,16 @@ function validarPaso(indice) {
   }
   if (indice === 1) {
     const elegidas = variantesElegidas();
-    if (!elegidas.length) { estadoEn(estado, 'Incluye al menos un tamaño.', true); return false; }
+    if (!elegidas.length) { estadoEn(estado, 'Incluye al menos un tamaño.', true, 'Falta un tamaño'); return false; }
     if (elegidas.some(v => Number(v.precioDescuento) >= Number(v.precioReferencial))) {
-      estadoEn(estado, 'El precio con descuento debe ser menor que el precio regular.', true); return false;
+      estadoEn(estado, 'El precio con descuento debe ser menor que el precio regular.', true, 'Revisa los precios'); return false;
     }
   }
   if (indice === 2) {
     const inicio = new Date(form.elements.inicioRecojo.value);
     const fin = new Date(form.elements.finRecojo.value);
-    if (inicio < new Date(Date.now() - 5 * 60000)) { estadoEn(estado, 'El inicio del recojo no puede estar en el pasado.', true); return false; }
-    if (!(fin > inicio)) { estadoEn(estado, 'El fin del recojo debe ser posterior al inicio.', true); return false; }
+    if (inicio < new Date(Date.now() - 5 * 60000)) { estadoEn(estado, 'El inicio del recojo no puede estar en el pasado.', true, 'Revisa el horario'); return false; }
+    if (!(fin > inicio)) { estadoEn(estado, 'El fin del recojo debe ser posterior al inicio.', true, 'Revisa el horario'); return false; }
   }
   return true;
 }
@@ -301,10 +301,12 @@ async function publicar(evento) {
     irAPaso(0);
     await cargar();
     mostrarVista('vigente');
-    mensaje('Pack publicado. Ya aparece en la búsqueda de los consumidores.');
+    mensaje('Pack publicado. Ya aparece en la búsqueda de los consumidores.', false, 'Pack publicado');
   } catch (error) {
-    estadoEn(document.querySelector('#estado-pack'), error.status === 409 && /oferta activa/.test(error.message)
-      ? 'Este local ya tiene una oferta activa. Podrás publicar otra cuando termine su horario.' : error.message, true);
+    const ofertaActiva = error.status === 409 && /oferta activa/.test(error.message);
+    estadoEn(document.querySelector('#estado-pack'), ofertaActiva
+      ? 'Este local ya tiene una oferta activa. Podrás publicar otra cuando termine su horario.' : error.message, true,
+      ofertaActiva ? 'Ya hay una oferta activa' : 'No se pudo publicar el pack');
   } finally { boton.disabled = false; }
 }
 
@@ -313,14 +315,27 @@ const resultado = document.querySelector('#resultado-codigo');
 document.querySelector('#form-codigo').addEventListener('submit', async evento => {
   evento.preventDefault();
   const codigo = evento.currentTarget.elements.codigo.value.trim().toUpperCase();
-  if (!codigo) return;
+  if (!codigo) {
+    notificar({ icon: 'warning', title: 'Falta el código', text: 'Ingresa el código de recojo que te dicta el cliente.' });
+    return;
+  }
   resultado.replaceChildren(el('p', { className: 'nota', textContent: 'Buscando el pedido…' }));
   try {
     pintarCompra(await solicitar('/local/recojos/' + encodeURIComponent(codigo)), codigo);
   } catch (error) {
+    if (error.status === 404) {
+      notificar({
+        icon: 'warning',
+        title: 'No encontramos ese código',
+        text: 'Revisa que el cliente lo haya dictado completo y que corresponda a este local.'
+      });
+    } else {
+      notificarError(error, 'No se pudo consultar el código');
+    }
     resultado.replaceChildren(error.status === 404
       ? banda('alerta', 'No encontramos ese código en este local', 'Revisa que el cliente lo haya dictado completo.')
-      : banda('peligro', 'No se pudo consultar el código', error.message));
+      : banda('peligro', 'No se pudo consultar el código',
+        esFalloDeRed(error) ? 'Revisa tu conexión e intenta de nuevo.' : error.message));
   }
 });
 
@@ -368,10 +383,10 @@ async function confirmar(boton, ruta, estado, codigo) {
     const compra = await solicitar(ruta, { method: 'POST' });
     pintarCompra(compra, codigo, true);
     document.querySelector('#form-codigo').reset();
-    mensaje('Entrega confirmada. La ganancia del día se actualizó en «Pack sorpresa».');
+    mensaje('Entrega confirmada. La ganancia del día se actualizó en «Pack sorpresa».', false, 'Entrega confirmada');
     await cargar();
   } catch (error) {
-    estadoEn(estado, error.message, true);
+    estadoEn(estado, error.message, true, 'No se pudo confirmar la entrega');
     boton.disabled = false;
   }
 }
