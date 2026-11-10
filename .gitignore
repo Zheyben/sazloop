@@ -27,3 +27,6 @@ Thumbs.db
 backend/data/
 ACCESOS.md
 ACCESOS_PARA_MYSQL.md
+
+# Usuario y contraseña de MySQL de cada integrante (nunca se sube)
+backend/application-local.properties

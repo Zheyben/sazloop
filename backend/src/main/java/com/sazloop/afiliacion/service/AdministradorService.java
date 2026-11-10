@@ -43,7 +43,8 @@ public class AdministradorService {
      * Crea la cuenta del administrador al iniciar, si todavía no existe, con el correo y la
      * contraseña de application.properties. Son credenciales de demostración, escritas en el
      * repositorio para ejecutar este proyecto académico en una computadora local; no deben usarse
-     * en un entorno real, donde vendrían de variables de entorno.
+     * en un entorno real, donde vendrían de variables de entorno. La contraseña de MySQL, en cambio,
+     * no está en el repositorio: cada persona la escribe en backend/application-local.properties.
      */
     @Bean
     @Profile("!demo")

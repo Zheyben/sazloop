@@ -42,14 +42,22 @@ Inicia MySQL y ejecuta una sola vez en MySQL Workbench o en la consola de MySQL:
 CREATE DATABASE IF NOT EXISTS sazloop;
 ```
 
-Debes modificar en `Sazloop\backend\src\main\resources\application-mysql.properties` la contraseña que esta escrita por tu contraseña root de tu mysql:
+### Configurar MySQL
 
-```java
+Tu usuario y contraseña de MySQL **no se escriben en el repositorio**. Cada integrante los guarda en un archivo local que Git ignora:
+
+1. En la carpeta `backend/`, copia el archivo `application-local.properties.example`.
+2. A la copia quítale el `.example` para que se llame `application-local.properties`.
+3. Ábrelo y escribe tu usuario y tu contraseña de MySQL:
+
+```properties
 spring.datasource.username=root
-spring.datasource.password=CONTRASEÑA <--- Cambia esta contraseña
+spring.datasource.password=TU_CONTRASEÑA_DE_MYSQL
 ```
 
-Ejecuta el proyecto desde IntelliJ IDEA, dandole RUN en el archivo de SazloopApplication.
+4. Arranca el backend **desde la carpeta `backend/`**: `mvnw.cmd spring-boot:run` (el perfil `mysql` es el predeterminado). El archivo se busca en la carpeta desde la que arrancas.
+
+`application-local.properties` está en el `.gitignore`: nunca se sube a GitHub. Si no existe, el perfil `mysql` usa los valores de ejemplo de `application-mysql.properties` (`root` / `cambia_esto`) y no podrá conectarse. El perfil `dev` (H2) no lee este archivo.
 
 Para ingresar al administrador debes ingresar estas credenciales:
 - Email: admin@correo.com
