@@ -104,6 +104,8 @@
 .ubicacion-sello::before { content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; }
 .ubicacion-sello.registrada { background: #e2efcc; color: #2f5d2b; }
 .ubicacion-sello.sin { background: #f2ebe0; color: #7a6a4e; }
+.aviso-delivery { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; margin: .2rem 0 1rem; padding: .75rem 1rem; border-radius: 1rem; border: 1px solid #ecd9a0; background: linear-gradient(135deg, #fffaf0 0%, #fff3d6 100%); color: #5c4408; }
+.aviso-delivery-etiqueta { padding: .15rem .6rem; border-radius: 999px; background: #5c4408; color: #fff3d6; font-size: .68rem; font-weight: 800; letter-spacing: .08em; }
 .cifra.impacto { position: relative; overflow: hidden; background: linear-gradient(145deg, #f1f7e6 0%, #e2efcc 100%); border-color: #c9d9a9; }
 .cifra.impacto::after { content: '🌿'; position: absolute; right: .7rem; top: .55rem; font-size: 1.15rem; opacity: .55; }
 .cifra.impacto strong { color: #2f5d2b; }

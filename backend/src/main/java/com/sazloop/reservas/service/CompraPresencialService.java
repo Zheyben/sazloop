@@ -45,6 +45,7 @@ public class CompraPresencialService {
     @Transactional
     public CompraResponse digital(Long usuarioId, CompraPresencialRequest solicitud) {
         CompraRequest entrada = solicitud.compra();
+        sinDelivery(entrada);
         validarToken(entrada.ofertaId(), solicitud.token());
         if (entrada.medioPago() == Pago.MedioPago.EFECTIVO)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usa la reserva en efectivo");
@@ -59,6 +60,7 @@ public class CompraPresencialService {
     @Transactional
     public RetencionResponse reservarEfectivo(Long usuarioId, CompraPresencialRequest solicitud) {
         CompraRequest entrada = solicitud.compra();
+        sinDelivery(entrada);
         if (entrada.medioPago() != Pago.MedioPago.EFECTIVO)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere efectivo");
         OfertaPack oferta = ofertas.bloquear(entrada.ofertaId())
@@ -152,6 +154,12 @@ public class CompraPresencialService {
         reservas.saveAndFlush(reserva);
         impacto.registrar(reserva);
         return compras.consultarCodigo(cuenta, codigo);
+    }
+
+    /** La compra presencial con QR es solo recojo: el delivery existe únicamente en las compras desde la web. */
+    private static void sinDelivery(CompraRequest entrada) {
+        if (entrada.modalidad() == Reserva.Modalidad.DELIVERY)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La compra con QR no admite delivery");
     }
 
     private Long codigoReserva(String codigo) {

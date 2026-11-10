@@ -303,6 +303,22 @@
 .carrito-pago-panel fieldset label { margin: .7rem 0; font-size: .88rem; }
 .carrito-pago-panel fieldset button { margin-top: .4rem; min-height: 42px; font-size: .88rem; }
 .carrito-pago-panel details { margin: .4rem 0; color: var(--secundario); font-size: .86rem; }
+.carrito-delivery { margin: 0 0 1.2rem; padding: 1rem 1.1rem 1.1rem; border: 1px dashed #becdb6; border-radius: 1rem; background: #f6faee; animation: filtros-entrar .25s ease; }
+.carrito-delivery[hidden] { display: none; }
+.carrito-delivery legend { padding: 0 .5rem; font-weight: 800; color: var(--bosque); font-size: .9rem; }
+.empresas-delivery { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 1rem; }
+.empresa-delivery { display: inline-flex; align-items: center; gap: .5rem; min-height: 42px; padding: .45rem 1rem; border: 1px solid #becdb6; border-radius: 999px; background: var(--crema); color: var(--bosque); font-size: .9rem; font-weight: 750; }
+.empresa-delivery:hover { background: #edf2e4; color: var(--bosque); }
+.empresa-delivery[aria-checked="true"] { border: 2px solid var(--bosque); background: #e9f0dc; padding: calc(.45rem - 1px) calc(1rem - 1px); }
+.empresa-punto { width: .75rem; height: .75rem; border-radius: 50%; flex: none; }
+.carrito-delivery-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.carrito-delivery-campos label { margin: 0; font-size: .82rem; }
+.carrito-delivery-campos .ancho-completo { grid-column: 1 / -1; }
+.carrito-delivery-campos input { margin-top: .35rem; font-size: .9rem; }
+.carrito-delivery-nota { margin: .9rem 0 0; padding: .6rem .8rem; border-radius: .8rem; background: #fff8e6; border: 1px solid #ecd9a0; color: #7a5c14; font-weight: 650; }
+.compra-delivery { display: inline-block; padding: .35rem .7rem; border-radius: .8rem; background: #eaf3dc; border: 1px solid #c9d9a9; color: #2f5d2b; font-size: .86rem; }
+.compra-modalidad { color: var(--secundario); font-size: .86rem; }
+@media (max-width: 560px) { .carrito-delivery-campos { grid-template-columns: 1fr; } }
 .carrito-terminos { display: flex; align-items: center; gap: .55rem; margin: 1rem 0; font-size: .88rem; font-weight: 600; }
 .carrito-terminos input { display: inline-block; width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--bosque); }
 .carrito-pago-panel > button[type="submit"] { width: 100%; }

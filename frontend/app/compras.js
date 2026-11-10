@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, fechaHora, aviso, tamanios, esFalloDeRed, notificarError, notificarExito, notificarBreve, confirmarAccion, tarjetaVigente } from './comun.js';
+import { solicitar, el, dinero, fechaHora, aviso, tamanios, esFalloDeRed, notificarError, notificarExito, notificarBreve, confirmarAccion, tarjetaVigente, empresasDelivery, esDelivery, textoDelivery } from './comun.js';
 import { leerCarrito, guardarCarrito } from './portal.js';
 import { abrirResena } from './resenas-portal.js';
 
@@ -19,6 +19,12 @@ const estados = {
   PENDIENTE_PAGO: 'Pendiente de pago', CONFIRMADA: 'Lista para recoger',
   RECOGIDA: 'Recogida', CANCELADA: 'Cancelada', EXPIRADA: 'Expirada'
 };
+// Si el pedido es delivery, «Lista para recoger» y «Recogida» se leen según el repartidor.
+function etiquetaEstado(compra) {
+  if (esDelivery(compra) && compra.estado === 'CONFIRMADA') return 'Esperando al repartidor';
+  if (esDelivery(compra) && compra.estado === 'RECOGIDA') return 'Entregado al repartidor';
+  return estados[compra.estado] || compra.estado;
+}
 let usuario;
 export function montarCompras(usuarioActual) {
   usuario = usuarioActual;
@@ -137,10 +143,64 @@ async function mostrarCarrito() {
   const terminos = el('input', { type: 'checkbox', disabled: true });
   const confirmar = el('button', { type: 'submit', textContent: 'Confirmar compra', disabled: true });
   const mensajePago = el('p', { role: 'status', ariaLive: 'polite' });
+  // ---- Modalidad de entrega: recojo en el local (por defecto) o delivery simulado ----
+  let modalidad = 'RECOJO';
+  let empresa = '';
+  const COLORES_EMPRESA = { PEDIDOSYA: '#fa0050', RAPPI: '#ff441f', INDRIVE: '#3aa655' };
+  const entregaDistrito = el('input', { type: 'text', maxLength: 80, autoComplete: 'address-level2',
+    placeholder: 'Ej.: Miraflores', ariaLabel: 'Distrito de entrega' });
+  const entregaDireccion = el('input', { type: 'text', maxLength: 180, autoComplete: 'street-address',
+    placeholder: 'Ej.: Av. Larco 1280, depto. 302', ariaLabel: 'Dirección de entrega' });
+  const entregaReferencia = el('input', { type: 'text', maxLength: 250,
+    placeholder: 'Ej.: Frente al parque (opcional)', ariaLabel: 'Referencia de entrega' });
+  const botonesEmpresa = Object.entries(empresasDelivery).map(([valor, nombre]) => {
+    const boton = el('button', { type: 'button', className: 'empresa-delivery', role: 'radio', ariaChecked: 'false' },
+      el('span', { className: 'empresa-punto', style: `background:${COLORES_EMPRESA[valor]}` }), nombre);
+    boton.dataset.valor = valor;
+    boton.addEventListener('click', () => { empresa = valor; marcarEntrega(); actualizarConfirmacion(); });
+    return boton;
+  });
+  const panelDelivery = el('fieldset', { className: 'carrito-delivery', hidden: true, disabled: true },
+    el('legend', { textContent: 'Delivery (simulado)' }),
+    el('span', { className: 'pack-dato-etiqueta', textContent: 'EMPRESA DE DELIVERY' }),
+    el('div', { className: 'empresas-delivery', role: 'radiogroup', ariaLabel: 'Empresa de delivery' }, ...botonesEmpresa),
+    el('div', { className: 'carrito-delivery-campos' },
+      el('label', {}, 'Distrito', entregaDistrito),
+      el('label', {}, 'Dirección', entregaDireccion),
+      el('label', { className: 'ancho-completo' }, 'Referencia', entregaReferencia)),
+    el('p', { className: 'carrito-nota carrito-delivery-nota', textContent: 'El costo del envío lo cobra la empresa de delivery. Sazloop no lo cobra.' }));
+  const opcionesEntrega = el('div', { className: 'carrito-metodos', role: 'radiogroup', ariaLabel: 'Modalidad de entrega' },
+    ...[['RECOJO', 'Recojo en el local', 'Lo retiras con tu código en el horario'], ['DELIVERY', 'Delivery', 'PedidosYa, Rappi o inDrive (simulado)']]
+      .map(([valor, titulo, ayuda]) => {
+        const boton = el('button', { type: 'button', className: 'carrito-metodo', role: 'radio', ariaChecked: 'false' },
+          el('strong', { textContent: titulo }), el('small', { textContent: ayuda }));
+        boton.dataset.valor = valor;
+        boton.addEventListener('click', () => {
+          modalidad = valor;
+          marcarEntrega();
+          actualizarConfirmacion();
+          if (valor === 'DELIVERY' && !empresa) botonesEmpresa[0].focus();
+        });
+        return boton;
+      }));
+  function marcarEntrega() {
+    opcionesEntrega.querySelectorAll('.carrito-metodo').forEach(b => b.setAttribute('aria-checked', String(b.dataset.valor === modalidad)));
+    botonesEmpresa.forEach(b => b.setAttribute('aria-checked', String(b.dataset.valor === empresa)));
+    panelDelivery.hidden = modalidad !== 'DELIVERY';
+    panelDelivery.disabled = modalidad !== 'DELIVERY';
+  }
+  // El delivery exige empresa, distrito y dirección; la referencia es opcional.
+  function entregaValida() {
+    return modalidad !== 'DELIVERY' || Boolean(empresa && entregaDistrito.value.trim() && entregaDireccion.value.trim());
+  }
+  for (const campo of [entregaDistrito, entregaDireccion]) campo.addEventListener('input', () => actualizarConfirmacion());
+
   let pagoValidado = false;
 
   function actualizarConfirmacion() {
-    confirmar.disabled = !pagoValidado || !terminos.checked || noDisponibles;
+    confirmar.disabled = !pagoValidado || !terminos.checked || noDisponibles || !entregaValida();
+    if (pagoValidado && !entregaValida()) mensajePago.textContent = 'Completa los datos del delivery para poder pagar.';
+    else if (mensajePago.textContent === 'Completa los datos del delivery para poder pagar.') mensajePago.textContent = '';
   }
   function resetPago() {
     marcarMetodo();
@@ -261,7 +321,7 @@ async function mostrarCarrito() {
   });
   formulario.addEventListener('submit', async evento => {
     evento.preventDefault();
-    if (!pagoValidado || !terminos.checked) return;
+    if (!pagoValidado || !terminos.checked || !entregaValida()) return;
     const guardados = pedidoActualizado();
     if (!guardados) {
       notificarError(mensaje.textContent || 'Revisa el carrito antes de continuar.', 'No se puede confirmar la compra');
@@ -271,7 +331,15 @@ async function mostrarCarrito() {
     try {
       const compras = await solicitar('/compras/lote', { method: 'POST', body: JSON.stringify({
         medioPago: medio.value,
-        pedidos: guardados.map(p => ({ ofertaId: p.ofertaId, lineas: p.lineas }))
+        pedidos: guardados.map(p => ({ ofertaId: p.ofertaId, lineas: p.lineas })),
+        // La modalidad y la dirección valen para toda la compra: todos los pedidos las comparten.
+        modalidad,
+        ...(modalidad === 'DELIVERY' ? {
+          empresaDelivery: empresa,
+          entregaDistrito: entregaDistrito.value.trim(),
+          entregaDireccion: entregaDireccion.value.trim(),
+          entregaReferencia: entregaReferencia.value.trim() || null
+        } : {})
       }) });
       guardarCarrito(usuario.id, []);
       if (!zona.isConnected) return;
@@ -282,7 +350,9 @@ async function mostrarCarrito() {
           el('h4', { textContent: `Pedido ${indice + 1}: ${compra.establecimiento}` }),
           el('p', { textContent: `Boleta ${compra.numeroBoleta}` }),
           el('p', { textContent: `Código de recojo: ${compra.codigoRecojo}` }),
-          el('p', { textContent: `Recojo: ${horarioCompra(compra)}` })))));
+          el('p', { className: 'compra-modalidad', textContent: esDelivery(compra)
+            ? `Modalidad: Delivery con ${textoDelivery(compra)}` : 'Modalidad: Recojo en el local' }),
+          el('p', { textContent: `${esDelivery(compra) ? 'El local lo entrega al repartidor' : 'Recojo'}: ${horarioCompra(compra)}` })))));
       mostrarHistorial();
       notificarExito('Compra confirmada', 'Cada pedido ya tiene su boleta y su código de recojo.');
     } catch (error) {
@@ -296,6 +366,7 @@ async function mostrarCarrito() {
     el('h3', { textContent: 'Resumen y pago' }),
     el('div', { className: 'carrito-total-fila' }, el('span', { textContent: 'Total de todos los pedidos' }), total),
     el('p', { className: 'carrito-nota', textContent: 'Todos los pedidos se pagan en una sola operación; cada uno genera su propia boleta y su código de recojo.' }),
+    el('span', { className: 'pack-dato-etiqueta', textContent: 'MODALIDAD DE ENTREGA' }), opcionesEntrega, panelDelivery,
     el('span', { className: 'pack-dato-etiqueta', textContent: 'MEDIO DE PAGO' }), medio, metodos, yape, tarjeta,
     el('p', { className: 'carrito-nota carrito-terminos-resumen' },
       'Pagos simulados. El pack es sorpresa; solo se cancela hasta el fin del horario de recojo, con reembolso del 50 %, y si no recoges a tiempo no hay reembolso. ',
@@ -303,6 +374,7 @@ async function mostrarCarrito() {
     el('label', { className: 'carrito-terminos' }, terminos, ' Acepto los términos y condiciones'),
     mensajePago, confirmar, mensaje));
   zona.replaceChildren(formulario);
+  marcarEntrega();
   resetPago();
   pedidoActualizado();
 }
@@ -324,10 +396,12 @@ async function mostrarHistorial() {
     if (!lista.isConnected) return;
     lista.replaceChildren(...(compras.length
       ? compras.map(c => el('article', { className: `tarjeta-compra estado-${c.estado.toLowerCase()}` },
-        el('p', { className: 'estado-etiqueta', textContent: estados[c.estado] || c.estado }),
+        el('p', { className: 'estado-etiqueta', textContent: etiquetaEstado(c) }),
         el('h3', { textContent: dinero(c.total) }),
         el('p', { className: 'compra-local', textContent: c.establecimiento }),
         el('p', { textContent: `Medio de pago: ${c.medioPago === 'TARJETA_DEBITO' ? 'Tarjeta de débito' : c.medioPago}` }),
+        esDelivery(c) ? el('p', { className: 'compra-delivery' }, el('strong', { textContent: 'Delivery · ' }), textoDelivery(c))
+          : el('p', { className: 'compra-modalidad', textContent: 'Recojo en el local' }),
         c.estado === 'CANCELADA' ? null : el('p', { className: 'codigo', textContent: c.codigoRecojo }),
         c.numeroBoleta ? el('p', { textContent: `Boleta ${c.numeroBoleta}` })
           : c.estado === 'PENDIENTE_PAGO' ? el('p', { textContent: 'Boleta disponible al confirmar el efectivo.' }) : null,

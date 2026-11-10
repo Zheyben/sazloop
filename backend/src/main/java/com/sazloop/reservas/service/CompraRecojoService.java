@@ -46,7 +46,9 @@ public class CompraRecojoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El efectivo no es un pago remoto");
         return entrada.pedidos().stream()
                 .map(pedido -> comprar(usuarioId,
-                        new CompraRequest(pedido.ofertaId(), entrada.medioPago(), pedido.lineas())))
+                        new CompraRequest(pedido.ofertaId(), entrada.medioPago(), pedido.lineas(),
+                                entrada.modalidad(), entrada.empresaDelivery(), entrada.entregaDistrito(),
+                                entrada.entregaDireccion(), entrada.entregaReferencia())))
                 .toList();
     }
 
@@ -55,6 +57,7 @@ public class CompraRecojoService {
     public CompraResponse comprar(Long usuarioId, CompraRequest entrada) {
         if (entrada.medioPago() == Pago.MedioPago.EFECTIVO)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El efectivo no es un pago remoto");
+        validarEntrega(entrada);
         OfertaPack oferta = ofertas.bloquear(entrada.ofertaId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         LocalDateTime ahora = LocalDateTime.now();
@@ -88,6 +91,7 @@ public class CompraRecojoService {
         Reserva reserva = Reserva.builder().consumidor(consumidor).oferta(oferta)
                 .origenCompra(Reserva.OrigenCompra.REMOTA).montoTotal(total)
                 .estado(Reserva.EstadoReserva.CONFIRMADA).fechaConfirmacion(ahora).build();
+        aplicarEntrega(reserva, entrada);
         for (var linea : cantidades.entrySet()) {
             VariantePack variante = disponibles.get(linea.getKey());
             int cantidad = linea.getValue();
@@ -110,6 +114,33 @@ public class CompraRecojoService {
         Reserva guardada = reservas.saveAndFlush(reserva);
         avisos.recordatorioRecojo(guardada);
         return respuesta(guardada);
+    }
+
+    /**
+     * Delivery simulado: con DELIVERY se exige empresa, distrito y dirección (400 si falta alguno).
+     * Sin modalidad la compra es un recojo, como antes.
+     */
+    static void validarEntrega(CompraRequest entrada) {
+        if (entrada.modalidad() != Reserva.Modalidad.DELIVERY) return;
+        if (entrada.empresaDelivery() == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Elige la empresa de delivery");
+        if (entrada.entregaDistrito() == null || entrada.entregaDistrito().isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Indica el distrito de entrega");
+        if (entrada.entregaDireccion() == null || entrada.entregaDireccion().isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Indica la dirección de entrega");
+    }
+
+    private static void aplicarEntrega(Reserva reserva, CompraRequest entrada) {
+        if (entrada.modalidad() != Reserva.Modalidad.DELIVERY) {
+            reserva.setModalidad(Reserva.Modalidad.RECOJO);
+            return;
+        }
+        reserva.setModalidad(Reserva.Modalidad.DELIVERY);
+        reserva.setEmpresaDelivery(entrada.empresaDelivery());
+        reserva.setEntregaDistrito(entrada.entregaDistrito().trim());
+        reserva.setEntregaDireccion(entrada.entregaDireccion().trim());
+        reserva.setEntregaReferencia(entrada.entregaReferencia() == null || entrada.entregaReferencia().isBlank()
+                ? null : entrada.entregaReferencia().trim());
     }
 
     @Transactional(readOnly = true)
@@ -180,7 +211,9 @@ public class CompraRecojoService {
                 cliente(reserva.getConsumidor().getUsuario()),
                 reserva.getDetalles().stream().map(detalle -> new CompraResponse.Linea(
                         detalle.getVariante().getTamanio(), detalle.getCantidad(), detalle.getPrecioUnitario()))
-                        .toList());
+                        .toList(),
+                reserva.getModalidad(), reserva.getEmpresaDelivery(), reserva.getEntregaDistrito(),
+                reserva.getEntregaDireccion(), reserva.getEntregaReferencia());
     }
 
     /** Nombre y la inicial del apellido: suficiente para que el personal identifique al cliente. */

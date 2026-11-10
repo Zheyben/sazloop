@@ -25,6 +25,15 @@ public class AvisosReservaService {
     public void recordatorioRecojo(Reserva reserva) {
         OfertaPack oferta = reserva.getOferta();
         Establecimiento local = oferta.getPackSorpresa().getEstablecimiento();
+        if (reserva.esDelivery()) {
+            avisar(reserva, TipoNotificacion.RECORDATORIO_RECOJO, "Delivery de " + local.getNombre(),
+                    "Tu pedido llegará con " + reserva.getEmpresaDelivery().getNombre() + " a "
+                            + reserva.getEntregaDireccion() + ", " + reserva.getEntregaDistrito()
+                            + ". Código: " + reserva.getCodigoRecojo().getCodigo()
+                            + ". El local lo entrega al repartidor " + rango(oferta.getInicioRecojo(), oferta.getFinRecojo())
+                            + ". Si no se entrega al repartidor dentro del horario, el pedido se cerrará sin entrega.");
+            return;
+        }
         avisar(reserva, TipoNotificacion.RECORDATORIO_RECOJO, "Recoge tu pedido en " + local.getNombre(),
                 "Presenta el código " + reserva.getCodigoRecojo().getCodigo() + " en " + local.getDireccion()
                         .getDireccionLinea() + ", " + local.getDireccion().getDistrito() + ", "
@@ -47,6 +56,15 @@ public class AvisosReservaService {
 
     public void noRecogida(Reserva reserva) {
         cerrarRecordatorio(reserva);
+        if (reserva.esDelivery()) {
+            avisar(reserva, TipoNotificacion.CAMBIO_RESERVA, "Pedido no entregado al repartidor: " + local(reserva),
+                    "El horario terminó el " + reserva.getOferta().getFinRecojo().format(FECHA) + " a las "
+                            + reserva.getOferta().getFinRecojo().format(HORA)
+                            + " y el local no lo entregó al repartidor a tiempo, así que el delivery con "
+                            + reserva.getEmpresaDelivery().getNombre()
+                            + " no se realizó. El código ya no es válido y el importe pagado no se reembolsa.");
+            return;
+        }
         avisar(reserva, TipoNotificacion.CAMBIO_RESERVA, "Pedido no recogido: " + local(reserva),
                 "El horario de recojo terminó el " + reserva.getOferta().getFinRecojo().format(FECHA) + " a las "
                         + reserva.getOferta().getFinRecojo().format(HORA)

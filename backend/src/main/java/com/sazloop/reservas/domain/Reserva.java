@@ -82,10 +82,45 @@ public class Reserva {
     @Builder.Default @Column(name = "resena_omitida", nullable = false)
     private boolean resenaOmitida = false;
 
+    /**
+     * Delivery simulado: no se conecta con ninguna empresa real. Sazloop no cobra el envío, así que el
+     * total, la boleta y la comisión no cambian. Las columnas aceptan nulos para no romper las reservas
+     * anteriores; una reserva sin modalidad es un recojo en el local.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "modalidad", length = 10)
+    private Modalidad modalidad;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "empresa_delivery", length = 15)
+    private EmpresaDelivery empresaDelivery;
+
+    @Column(name = "entrega_distrito", length = 80)
+    private String entregaDistrito;
+
+    @Column(name = "entrega_direccion", length = 180)
+    private String entregaDireccion;
+
+    @Column(name = "entrega_referencia", length = 250)
+    private String entregaReferencia;
+
+    public Modalidad getModalidad() { return modalidad == null ? Modalidad.RECOJO : modalidad; }
+
+    public boolean esDelivery() { return getModalidad() == Modalidad.DELIVERY; }
+
     public enum EstadoReserva {
         PENDIENTE_PAGO, CONFIRMADA, RECOGIDA, CANCELADA, EXPIRADA
     }
 
     public enum OrigenCompra { REMOTA, PRESENCIAL_QR }
+
+    public enum Modalidad { RECOJO, DELIVERY }
+
+    public enum EmpresaDelivery {
+        PEDIDOSYA("PedidosYa"), RAPPI("Rappi"), INDRIVE("inDrive");
+        private final String nombre;
+        EmpresaDelivery(String nombre) { this.nombre = nombre; }
+        public String getNombre() { return nombre; }
+    }
 }
 

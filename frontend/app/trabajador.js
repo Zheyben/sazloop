@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, tamanios, notificar, notificarError, esFalloDeRed } from './comun.js';
+import { solicitar, el, dinero, tamanios, notificar, notificarError, esFalloDeRed, esDelivery, textoDelivery } from './comun.js';
 import {
   pintarIconos, crearNavegacion, mensaje, estadoEn, insignia, banda, vacio, cifra, tabla,
   rangoHorario, hora, fecha, filasDieta
@@ -343,10 +343,13 @@ function pintarCompra(compra, codigo, recienEntregada = false) {
   const [texto, tono] = ESTADOS_COMPRA[compra.estado] || [compra.estado, ''];
   const zonaAccion = el('div', { className: 'acciones-formulario' });
   const estado = el('p', { className: 'estado-formulario', role: 'status' });
+  const delivery = esDelivery(compra);
   if (compra.estado === 'CONFIRMADA') {
-    zonaAccion.append(el('button', { type: 'button', textContent: 'Confirmar entrega',
+    zonaAccion.append(el('button', { type: 'button', textContent: delivery ? 'Entregado al repartidor' : 'Confirmar entrega',
       onclick: e => confirmar(e.currentTarget, `/local/recojos/${encodeURIComponent(codigo)}/confirmar`, estado, codigo) }));
-    estadoEn(estado, `Entrega el pedido al cliente y luego confirma. Puedes entregarlo hasta las ${hora(compra.finRecojo)}.`);
+    estadoEn(estado, delivery
+      ? `Entrega el pedido al repartidor de ${textoDelivery(compra).split(' – ')[0]} y luego confirma. Puedes entregarlo hasta las ${hora(compra.finRecojo)}.`
+      : `Entrega el pedido al cliente y luego confirma. Puedes entregarlo hasta las ${hora(compra.finRecojo)}.`);
   } else if (compra.estado === 'PENDIENTE_PAGO' && compra.medioPago === 'EFECTIVO') {
     zonaAccion.append(el('button', { type: 'button', textContent: 'Recibí el efectivo y entregué el pedido',
       onclick: e => confirmar(e.currentTarget, `/local/efectivo/${encodeURIComponent(codigo)}/confirmar`, estado, codigo) }));
@@ -358,11 +361,14 @@ function pintarCompra(compra, codigo, recienEntregada = false) {
   const comision = Math.round(Number(compra.total) * 10) / 100;
   resultado.replaceChildren(
     recienEntregada ? el('div', { className: 'confirmado', role: 'status' }, el('span', { ariaHidden: 'true', textContent: '✓' }),
-      el('div', {}, el('strong', { textContent: 'Entrega confirmada correctamente' }),
+      el('div', {}, el('strong', { textContent: delivery ? 'Entregado al repartidor correctamente' : 'Entrega confirmada correctamente' }),
         el('p', { style: 'margin:.2rem 0 0; font-weight:500', textContent:
           `El código quedó utilizado. Venta ${dinero(compra.total)} − comisión de Sazloop ${dinero(comision)} = ganancia neta ${dinero(Number(compra.total) - comision)}; ya figura en «Pack sorpresa».` }))) : '',
     el('article', { className: 'tarjeta-panel', style: recienEntregada ? 'margin-top:1rem' : '' },
       el('header', {}, el('span', { className: 'codigo-grande', textContent: compra.codigoRecojo }), insignia(texto, tono)),
+      delivery ? el('div', { className: 'aviso-delivery', role: 'note' },
+        el('span', { className: 'aviso-delivery-etiqueta', textContent: 'DELIVERY' }),
+        el('strong', { textContent: `Delivery: ${textoDelivery(compra)}` })) : '',
       el('span', { className: 'dato-titulo', textContent: 'Entregar' }),
       el('ul', { className: 'entrega' }, ...(compra.lineas || []).map(l =>
         el('li', {}, el('span', { textContent: `${l.cantidad} × ${tamanios[l.tamanio] || l.tamanio}` }),
@@ -371,7 +377,7 @@ function pintarCompra(compra, codigo, recienEntregada = false) {
         dato('Cliente', compra.cliente),
         dato('Total', dinero(compra.total)),
         dato('Medio de pago', MEDIOS[compra.medioPago] || compra.medioPago),
-        dato('Horario de recojo', rangoHorario(compra.inicioRecojo, compra.finRecojo))),
+        dato(delivery ? 'Entregar al repartidor' : 'Horario de recojo', rangoHorario(compra.inicioRecojo, compra.finRecojo))),
       zonaAccion, estado));
 }
 

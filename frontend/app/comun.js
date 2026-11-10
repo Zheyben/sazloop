@@ -46,6 +46,15 @@ export const dinero = n => `S/ ${Number(n).toFixed(2)}`;
 export const fechaHora = s => new Date(s).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 export const tamanios = { PEQUENO: 'Pequeño', MEDIANO: 'Mediano', GRANDE: 'Grande' };
 
+// Delivery simulado: empresas disponibles y cómo se describe la entrega de una compra.
+export const empresasDelivery = { PEDIDOSYA: 'PedidosYa', RAPPI: 'Rappi', INDRIVE: 'inDrive' };
+export const esDelivery = compra => compra?.modalidad === 'DELIVERY';
+// «PedidosYa – Av. Larco 123, Miraflores (frente al parque)»
+export function textoDelivery(compra) {
+  const referencia = compra.entregaReferencia ? ` (${compra.entregaReferencia})` : '';
+  return `${empresasDelivery[compra.empresaDelivery] || compra.empresaDelivery} – ${compra.entregaDireccion}, ${compra.entregaDistrito}${referencia}`;
+}
+
 const COLOR_BOTON = '#183a2b';
 
 export function esFalloDeRed(error) {
