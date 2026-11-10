@@ -12,7 +12,9 @@ public record OfertaResponse(Long id, Long establecimientoId, String establecimi
         String pack, String descripcion, String posiblesProductos,
         List<String> alergenos, List<String> restricciones,
         LocalDateTime inicioRecojo, LocalDateTime finRecojo, LocalDateTime limiteDefinitivo,
-        EstadoOferta estado, List<Variante> variantes) {
+        EstadoOferta estado, List<Variante> variantes,
+        /** Distancia en línea recta al consumidor, en km; vacía si no se envió la ubicación o el local no tiene coordenadas. */
+        Double distanciaKm) {
     public record Variante(Long id, TamanioVariante tamanio, BigDecimal precioReferencial,
                            BigDecimal precioDescuento, BigDecimal ahorro, int stockDisponible) {}
 }

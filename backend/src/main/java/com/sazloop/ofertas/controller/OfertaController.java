@@ -42,8 +42,9 @@ public class OfertaController {
     public List<OfertaResponse> buscar(@RequestParam(required = false) String distrito,
             @RequestParam(required = false) String direccion,
             @RequestParam(required = false) BigDecimal precioMaximo,
-            @RequestParam(required = false) Double calificacionMinima) {
-        return servicio.buscar(distrito, direccion, precioMaximo, calificacionMinima);
+            @RequestParam(required = false) Double calificacionMinima,
+            @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lng) {
+        return servicio.buscar(distrito, direccion, precioMaximo, calificacionMinima, lat, lng);
     }
     @GetMapping("/ofertas/{id}")
     public OfertaResponse consultar(@PathVariable Long id) { return servicio.consultar(id); }

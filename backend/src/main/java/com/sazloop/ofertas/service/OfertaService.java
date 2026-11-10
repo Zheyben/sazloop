@@ -24,10 +24,12 @@ public class OfertaService {
     private final AlergenoRepository alergenos;
     private final RestriccionRepository restricciones;
     private final ResenaRepository resenas;
+    private final OfertaBusquedaRepository busqueda;
 
     public OfertaService(PackSorpresaRepository packs, OfertaPackRepository ofertas,
             EstablecimientoRepository establecimientos, AlergenoRepository alergenos,
-            RestriccionRepository restricciones, ResenaRepository resenas) {
+            RestriccionRepository restricciones, ResenaRepository resenas, OfertaBusquedaRepository busqueda) {
+        this.busqueda = busqueda;
         this.packs = packs;
         this.ofertas = ofertas;
         this.establecimientos = establecimientos;
@@ -119,25 +121,57 @@ public class OfertaService {
                 .findFirst().map(this::respuesta);
     }
 
+    /** Búsqueda sin ubicación (sin «Cerca de mí»). */
     @Transactional(readOnly = true)
     public List<OfertaResponse> buscar(String distrito, String direccion, BigDecimal precioMaximo,
                                         Double calificacionMinima) {
+        return buscar(distrito, direccion, precioMaximo, calificacionMinima, null, null);
+    }
+
+    /**
+     * Búsqueda pública: la base de datos aplica los filtros (ver OfertaBusquedaRepository). Si llegan lat y lng
+     * («Cerca de mí»), se calcula la distancia en línea recta (Haversine) y se ordena del más cercano al más
+     * lejano; los locales sin coordenadas quedan al final. La ubicación del consumidor no se guarda.
+     */
+    @Transactional(readOnly = true)
+    public List<OfertaResponse> buscar(String distrito, String direccion, BigDecimal precioMaximo,
+                                        Double calificacionMinima, Double lat, Double lng) {
         if (precioMaximo != null && precioMaximo.signum() <= 0 ||
                 calificacionMinima != null && (calificacionMinima < 0 || calificacionMinima > 5))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Filtro inválido");
-        return ofertas.findByEstado(OfertaPack.EstadoOferta.ACTIVA).stream()
-                .filter(o -> o.getFinRecojo().isAfter(LocalDateTime.now()))
-                .filter(o -> o.getPackSorpresa().getEstablecimiento().getEstado() ==
-                        Establecimiento.EstadoEstablecimiento.ACTIVO)
-                .sorted(Comparator.comparing(OfertaPack::getFechaPublicacion)
-                        .thenComparing(OfertaPack::getId).reversed())
-                .map(this::respuesta)
-                .filter(o -> o.variantes().stream().anyMatch(v -> v.stockDisponible() > 0 &&
-                        (precioMaximo == null || v.precioDescuento().compareTo(precioMaximo) <= 0)))
-                .filter(o -> contiene(o.distrito(), distrito) && contiene(o.direccion(), direccion))
-                .filter(o -> calificacionMinima == null ||
-                        o.calificacion() != null && o.calificacion() >= calificacionMinima)
-                .toList();
+        if ((lat == null) != (lng == null) || lat != null && (!Double.isFinite(lat) || !Double.isFinite(lng)
+                || lat < -90 || lat > 90 || lng < -180 || lng > 180))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ubicación inválida");
+        List<OfertaPack> encontradas = busqueda.buscar(distrito, direccion, precioMaximo,
+                calificacionMinima, LocalDateTime.now());
+        var calificaciones = busqueda.calificaciones(encontradas.stream()
+                .map(o -> o.getPackSorpresa().getEstablecimiento().getId()).distinct().toList());
+        List<OfertaResponse> salida = new ArrayList<>();
+        for (OfertaPack oferta : encontradas) {
+            Establecimiento local = oferta.getPackSorpresa().getEstablecimiento();
+            var calificacion = calificaciones.get(local.getId());
+            Double promedio = calificacion == null ? null : calificacion.promedio();
+            // El filtro de la base de datos tiene un pequeño margen; aquí se aplica el valor exacto.
+            if (calificacionMinima != null && (promedio == null || promedio < calificacionMinima)) continue;
+            salida.add(respuesta(oferta, promedio, distanciaKm(local, lat, lng)));
+        }
+        if (lat != null) {
+            // Orden estable: los empates y los locales sin coordenadas conservan el orden por fecha de publicación.
+            salida.sort(Comparator.comparing(OfertaResponse::distanciaKm, Comparator.nullsLast(Comparator.naturalOrder())));
+        }
+        return salida;
+    }
+
+    /** Distancia de Haversine en km, redondeada a 2 decimales; null si falta alguna de las dos ubicaciones. */
+    static Double distanciaKm(Establecimiento local, Double lat, Double lng) {
+        var dir = local.getDireccion();
+        if (lat == null || lng == null || dir.getLatitud() == null || dir.getLongitud() == null) return null;
+        double radioTierraKm = 6371.0088;
+        double f1 = Math.toRadians(lat), f2 = Math.toRadians(dir.getLatitud().doubleValue());
+        double df = f2 - f1, dl = Math.toRadians(dir.getLongitud().doubleValue() - lng);
+        double a = Math.sin(df / 2) * Math.sin(df / 2) + Math.cos(f1) * Math.cos(f2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+        double km = 2 * radioTierraKm * Math.asin(Math.min(1.0, Math.sqrt(a)));
+        return Math.round(km * 100.0) / 100.0;
     }
 
     @Transactional(readOnly = true)
@@ -151,12 +185,17 @@ public class OfertaService {
         return respuesta(oferta);
     }
 
+    /** Ficha de una sola oferta (publicación o consulta): calcula su calificación con una consulta propia. */
     private OfertaResponse respuesta(OfertaPack oferta) {
-        PackSorpresa pack = oferta.getPackSorpresa();
-        Establecimiento local = pack.getEstablecimiento();
-        var calificaciones = resenas.findByEstablecimiento_IdAndVisibleTrue(local.getId());
+        var calificaciones = resenas.findByEstablecimiento_IdAndVisibleTrue(oferta.getPackSorpresa().getEstablecimiento().getId());
         Double promedio = calificaciones.isEmpty() ? null : calificaciones.stream()
                 .mapToInt(r -> r.getCalificacion()).average().orElseThrow();
+        return respuesta(oferta, promedio, null);
+    }
+
+    private OfertaResponse respuesta(OfertaPack oferta, Double promedio, Double distanciaKm) {
+        PackSorpresa pack = oferta.getPackSorpresa();
+        Establecimiento local = pack.getEstablecimiento();
         return new OfertaResponse(oferta.getId(), local.getId(), local.getNombre(),
                 local.getDireccion().getDistrito(), local.getDireccion().getDireccionLinea(), promedio,
                 pack.getNombre(), pack.getDescripcion(), pack.getPosiblesProductos(),
@@ -167,13 +206,9 @@ public class OfertaService {
                 .map(v -> new OfertaResponse.Variante(v.getId(), v.getTamanio(),
                         v.getPrecioReferencial(), v.getPrecioDescuento(),
                         v.getPrecioReferencial().subtract(v.getPrecioDescuento()),
-                        v.getStockDisponible())).toList());
+                        v.getStockDisponible())).toList(), distanciaKm);
     }
 
-    private static boolean contiene(String texto, String filtro) {
-        return filtro == null || filtro.isBlank() ||
-                texto.toLowerCase(Locale.ROOT).contains(filtro.trim().toLowerCase(Locale.ROOT));
-    }
     private static Set<String> nombres(List<String> entrada, int max) {
         Set<String> salida = new LinkedHashSet<>();
         if (entrada == null) return salida;

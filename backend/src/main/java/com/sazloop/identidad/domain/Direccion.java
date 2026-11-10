@@ -1,9 +1,13 @@
 package com.sazloop.identidad.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.math.BigDecimal;
 
 /** Ubicación textual estructurada que permite buscar establecimientos por distrito. */
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -38,6 +42,15 @@ public class Direccion {
     @Size(max = 10)
     @Column(name = "codigo_postal", length = 10)
     private String codigoPostal;
+
+    /** Coordenadas opcionales del local (para el filtro «Cerca de mí»); los locales antiguos no las tienen. */
+    @DecimalMin("-90") @DecimalMax("90")
+    @Column(precision = 10, scale = 6)
+    private BigDecimal latitud;
+
+    @DecimalMin("-180") @DecimalMax("180")
+    @Column(precision = 10, scale = 6)
+    private BigDecimal longitud;
 
     @OneToOne(mappedBy = "direccion", fetch = FetchType.LAZY)
     private Establecimiento establecimiento;

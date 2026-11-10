@@ -10,6 +10,7 @@ import com.sazloop.identidad.dto.EmpresaRequest;
 import com.sazloop.identidad.dto.EmpresaResponse;
 import com.sazloop.identidad.dto.EstablecimientoRequest;
 import com.sazloop.identidad.dto.EstablecimientoResponse;
+import com.sazloop.identidad.dto.UbicacionRequest;
 import com.sazloop.identidad.repository.EmpresaRepository;
 import com.sazloop.identidad.repository.EstablecimientoRepository;
 import com.sazloop.identidad.repository.PropietarioEmpresaRepository;
@@ -82,6 +83,8 @@ public class EmpresaService {
                 .numero(limpiar(dir.numero()))
                 .referencia(limpiar(dir.referencia()))
                 .codigoPostal(limpiar(dir.codigoPostal()))
+                .latitud(dir.latitud())
+                .longitud(dir.longitud())
                 .build();
         Establecimiento establecimiento = Establecimiento.builder()
                 .empresa(empresa)
@@ -99,6 +102,18 @@ public class EmpresaService {
         return establecimientos.findByEmpresa_IdOrderByIdAsc(empresa.getId()).stream()
                 .map(EmpresaService::respuesta)
                 .toList();
+    }
+
+    /** Guarda la ubicación de un local; solo puede hacerlo el dueño de la empresa a la que pertenece. */
+    @Transactional
+    public EstablecimientoResponse actualizarUbicacion(Long usuarioId, Long localId, UbicacionRequest entrada) {
+        Empresa empresa = empresaPropia(usuarioId);
+        Establecimiento local = establecimientos.findById(localId)
+                .filter(l -> l.getEmpresa().getId().equals(empresa.getId()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        local.getDireccion().setLatitud(entrada.latitud());
+        local.getDireccion().setLongitud(entrada.longitud());
+        return respuesta(local);
     }
 
     private Empresa empresaPropia(Long usuarioId) {
@@ -120,6 +135,7 @@ public class EmpresaService {
         return new EstablecimientoResponse(local.getId(), local.getNombre(),
                 local.getDireccion().getDistrito(), local.getDireccion().getDireccionLinea(),
                 local.getEstado(), local.getCuentaOperativa() == null
-                        ? null : local.getCuentaOperativa().getNombreUsuario());
+                        ? null : local.getCuentaOperativa().getNombreUsuario(),
+                local.getDireccion().getLatitud(), local.getDireccion().getLongitud());
     }
 }

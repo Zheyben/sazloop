@@ -100,6 +100,10 @@
 .filtros-portal .filtro-cercania { grid-column: 1 / 4; display: flex; align-items: center; gap: .5rem; min-height: 46px; color: var(--secundario); font-size: .9rem; }
 .filtro-cercania input { width: auto; margin: 0; accent-color: var(--bosque); }
 .filtro-cercania small { margin-left: .2rem; color: var(--secundario); font-size: .77rem; }
+.pack-distancia { display: inline-flex; align-items: center; gap: .35rem; width: fit-content; margin: 0; padding: .2rem .65rem .2rem .5rem; border-radius: 999px; background: #e8f1d8; border: 1px solid #c9d9a9; color: #2f5d2b; font-size: .78rem; font-weight: 800; }
+.pack-distancia::before { content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: #5d9a3c; box-shadow: 0 0 0 3px rgba(93, 154, 60, .22); }
+.pack-distancia.sin-dato { background: transparent; border-style: dashed; border-color: var(--borde); color: var(--secundario); font-weight: 650; }
+.pack-distancia.sin-dato::before { background: var(--borde); box-shadow: none; }
 .enlace-ver-todas { display: inline-flex; align-items: center; min-height: 42px; font-weight: 800; white-space: nowrap; text-decoration-thickness: 1px; }
 .grid-packs, .grid-compras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.3rem; }
 .tarjeta-pack { overflow: hidden; display: flex; flex-direction: column; min-width: 0; border: 1px solid #dbe3cf; border-radius: 1.4rem; background: var(--marfil); box-shadow: 0 12px 28px rgba(24, 58, 43, .055); transition: transform .2s ease, box-shadow .2s ease; }

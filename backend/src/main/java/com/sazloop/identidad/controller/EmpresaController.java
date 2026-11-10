@@ -4,6 +4,7 @@ import com.sazloop.identidad.dto.EmpresaRequest;
 import com.sazloop.identidad.dto.EmpresaResponse;
 import com.sazloop.identidad.dto.EstablecimientoRequest;
 import com.sazloop.identidad.dto.EstablecimientoResponse;
+import com.sazloop.identidad.dto.UbicacionRequest;
 import com.sazloop.identidad.service.EmpresaService;
 import com.sazloop.identidad.service.IndicadoresEmpresaService;
 import com.sazloop.identidad.service.UsuarioSesionActual;
@@ -12,7 +13,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -58,6 +61,13 @@ public class EmpresaController {
     public EstablecimientoResponse registrarLocal(@Valid @RequestBody EstablecimientoRequest entrada,
                                                    HttpServletRequest request) {
         return empresas.registrarEstablecimiento(usuarioActual.id(request), entrada);
+    }
+
+    /** Registra o actualiza la ubicación de un local. Solo el dueño de la empresa puede hacerlo. */
+    @PutMapping("/actual/establecimientos/{id}/ubicacion")
+    public EstablecimientoResponse actualizarUbicacion(@PathVariable Long id,
+            @Valid @RequestBody UbicacionRequest entrada, HttpServletRequest request) {
+        return empresas.actualizarUbicacion(usuarioActual.id(request), id, entrada);
     }
 
     @GetMapping("/actual/establecimientos")

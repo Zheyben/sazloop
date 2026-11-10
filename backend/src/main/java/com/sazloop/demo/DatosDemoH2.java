@@ -70,9 +70,9 @@ public class DatosDemoH2 {
             empresas.registrarEmpresa(aurora, new EmpresaRequest("Aurora Alimentos Demo S.A.C.",
                     "Aurora Cocina", "20999990001"));
             Long sanBorja = local(empresas, aurora, "Aurora San Borja", "San Borja",
-                    "Av. San Borja Norte", "1064");
+                    "Av. San Borja Norte", "1064", "-12.1002", "-76.9990");
             Long miraflores = local(empresas, aurora, "Aurora Miraflores", "Miraflores",
-                    "Av. José Larco", "1280");
+                    "Av. José Larco", "1280", "-12.1219", "-77.0297");
             solicitud(solicitudes, aurora, sanBorja, documento); // Queda EN_REVISION, sin cuenta ni oferta.
             aprobar(solicitudes, revisiones, aurora, miraflores, documento, admin);
             publicar(cuentas, ofertas, aurora, miraflores, "demo.miraflores", "Panes del Día",
@@ -83,7 +83,7 @@ public class DatosDemoH2 {
             empresas.registrarEmpresa(oriente, new EmpresaRequest("Oriente Pan Demo S.A.C.",
                     "Oriente Pan", "20999990002"));
             Long ayllonUno = local(empresas, oriente, "Oriente Pan Ate", "Ate",
-                    "Av. Nicolás Ayllón", "5000");
+                    "Av. Nicolás Ayllón", "5000", "-12.0409", "-76.9582");
             aprobar(solicitudes, revisiones, oriente, ayllonUno, documento, admin);
             publicar(cuentas, ofertas, oriente, ayllonUno, "demo.ayllon1", "Merienda Sorpresa",
                     "Pack de excedentes de panadería aptos para consumo.",
@@ -93,7 +93,7 @@ public class DatosDemoH2 {
             empresas.registrarEmpresa(sazon, new EmpresaRequest("Sazón Urbano Demo S.A.C.",
                     "Sazón Urbano", "20999990003"));
             Long ayllonDos = local(empresas, sazon, "Sazón Urbano Ate", "Ate",
-                    "Av. Nicolás Ayllón", "6000");
+                    "Av. Nicolás Ayllón", "6000", "-12.0390", "-76.9305");
             aprobar(solicitudes, revisiones, sazon, ayllonDos, documento, admin);
             publicar(cuentas, ofertas, sazon, ayllonDos, "demo.ayllon2", "Almuerzo del Día",
                     "Comida preparada del día que quedó disponible para su aprovechamiento.",
@@ -115,11 +115,13 @@ public class DatosDemoH2 {
     }
 
     private static Long local(EmpresaService empresas, Long dueno, String nombre, String distrito,
-                              String avenida, String numero) {
-        // Las direcciones y empresas son ilustrativas, no datos de negocios reales.
+                              String avenida, String numero, String latitud, String longitud) {
+        // Las direcciones y empresas son ilustrativas, no datos de negocios reales. Las coordenadas son
+        // aproximadas (la zona del distrito en Lima) y sirven para probar el filtro «Cerca de mí».
         return empresas.registrarEstablecimiento(dueno, new EstablecimientoRequest(nombre,
                 "Establecimiento de comida de demostración.", null,
-                new DireccionRequest("Lima", "Lima", distrito, avenida, numero, null, null))).id();
+                new DireccionRequest("Lima", "Lima", distrito, avenida, numero, null, null,
+                        new java.math.BigDecimal(latitud), new java.math.BigDecimal(longitud)))).id();
     }
 
     private static SolicitudResponse solicitud(SolicitudAfiliacionService servicio, Long dueno,

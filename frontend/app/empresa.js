@@ -141,20 +141,59 @@ function tarjetaIndicadores(i, local) {
 
 // ---------- Locales ----------
 const formLocal = document.querySelector('#form-local');
+
+// Toma la ubicación actual con el GPS del navegador. Falla con un mensaje claro si no hay permiso.
+function ubicacionActual() {
+  return new Promise((resolver, rechazar) => {
+    if (!navigator.geolocation) return rechazar(new Error('Tu navegador no permite obtener la ubicación.'));
+    navigator.geolocation.getCurrentPosition(
+      p => resolver({ latitud: Number(p.coords.latitude.toFixed(6)), longitud: Number(p.coords.longitude.toFixed(6)) }),
+      () => rechazar(new Error('No pudimos obtener tu ubicación. Activa el permiso de ubicación del navegador e inténtalo de nuevo.')),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+  });
+}
+
+// Ubicación opcional del local que se está registrando (se manda junto con el formulario).
+let ubicacionNuevoLocal = null;
+const estadoUbicacion = document.querySelector('#estado-ubicacion');
+const TEXTO_UBICACION_OPCIONAL = 'Opcional: permite que los consumidores te encuentren con «Cerca de mí».';
+function limpiarUbicacionNuevoLocal() {
+  ubicacionNuevoLocal = null;
+  estadoUbicacion.className = 'ubicacion-estado';
+  estadoUbicacion.textContent = TEXTO_UBICACION_OPCIONAL;
+}
+document.querySelector('#usar-ubicacion').addEventListener('click', async evento => {
+  const boton = evento.currentTarget;
+  boton.disabled = true;
+  estadoUbicacion.className = 'ubicacion-estado';
+  estadoUbicacion.textContent = 'Obteniendo tu ubicación…';
+  try {
+    ubicacionNuevoLocal = await ubicacionActual();
+    estadoUbicacion.className = 'ubicacion-estado lista';
+    estadoUbicacion.textContent = `Ubicación capturada (${ubicacionNuevoLocal.latitud}, ${ubicacionNuevoLocal.longitud})`;
+  } catch (error) {
+    ubicacionNuevoLocal = null;
+    estadoUbicacion.className = 'ubicacion-estado error';
+    estadoUbicacion.textContent = error.message;
+  } finally { boton.disabled = false; }
+});
+
 function abrirFormularioLocal() {
   formLocal.hidden = false;
   formLocal.elements.nombre.focus();
 }
 document.querySelector('#nuevo-local').addEventListener('click', abrirFormularioLocal);
-document.querySelector('#cancelar-local').addEventListener('click', () => { formLocal.reset(); formLocal.hidden = true; });
+document.querySelector('#cancelar-local').addEventListener('click', () => { formLocal.reset(); limpiarUbicacionNuevoLocal(); formLocal.hidden = true; });
 formLocal.addEventListener('submit', async evento => {
   evento.preventDefault();
   const { departamento, provincia, distrito, direccionLinea, numero, referencia, codigoPostal, ...local } =
     Object.fromEntries(new FormData(formLocal));
-  local.direccion = { departamento, provincia, distrito, direccionLinea, numero, referencia, codigoPostal };
+  local.direccion = { departamento, provincia, distrito, direccionLinea, numero, referencia, codigoPostal,
+    ...(ubicacionNuevoLocal || {}) };
   try {
     const creado = await solicitar('/empresas/actual/establecimientos', { method: 'POST', body: JSON.stringify(local) });
     formLocal.reset();
+    limpiarUbicacionNuevoLocal();
     formLocal.hidden = true;
     mostrar('locales:detalle', creado.id);
     mensaje('Local registrado. Ahora adjunta sus documentos y envía la solicitud.', false, 'Local registrado');
@@ -180,6 +219,34 @@ async function cargarLocales() {
       el('button', { type: 'button', textContent: 'Gestionar', onclick: () => mostrar('locales:detalle', local.id) })))));
 }
 
+// Ubicación del local para «Cerca de mí»: se ve si está registrada y se puede actualizar con el GPS.
+function seccionUbicacion(local) {
+  const tiene = local.latitud != null && local.longitud != null;
+  const boton = el('button', { type: 'button', className: 'secundario', textContent: 'Actualizar ubicación' });
+  boton.addEventListener('click', async () => {
+    boton.disabled = true;
+    boton.textContent = 'Obteniendo ubicación…';
+    try {
+      const coordenadas = await ubicacionActual();
+      await solicitar(`/empresas/actual/establecimientos/${local.id}/ubicacion`, { method: 'PUT', body: JSON.stringify(coordenadas) });
+      await abrirLocal(local.id, 'La ubicación del local quedó guardada. Los consumidores ya pueden encontrarlo con «Cerca de mí».', 'Ubicación actualizada');
+    } catch (error) {
+      boton.disabled = false;
+      boton.textContent = 'Actualizar ubicación';
+      mensaje(error.message, true, 'No se pudo actualizar la ubicación');
+    }
+  });
+  return el('section', { className: 'tarjeta-panel ubicacion-local' },
+    el('div', { className: 'ubicacion-local-cabecera' },
+      el('div', {},
+        el('h3', { style: 'margin:0 0 .35rem', textContent: 'Ubicación del local' }),
+        el('span', { className: `ubicacion-sello ${tiene ? 'registrada' : 'sin'}`, textContent: tiene ? 'Ubicación registrada' : 'Sin ubicación' }),
+        el('p', { className: 'nota', style: 'margin:.6rem 0 0', textContent: tiene
+          ? `Coordenadas: ${Number(local.latitud).toFixed(5)}, ${Number(local.longitud).toFixed(5)}. Párate en el local para actualizarla.`
+          : 'Sin coordenadas, este local aparece al final cuando un consumidor usa «Cerca de mí». Hazlo desde el local, con el permiso de ubicación activado.' })),
+      boton));
+}
+
 async function abrirLocal(id, aviso = '', titulo) {
   detalle.replaceChildren(el('p', { className: 'nota', textContent: 'Cargando el local…' }));
   const [doc, locales] = await Promise.all([
@@ -197,6 +264,7 @@ async function abrirLocal(id, aviso = '', titulo) {
       `${doc.motivoSuspension || 'Un documento obligatorio venció.'}${doc.suspendidoDesde ? ` Suspendido desde el ${fecha(doc.suspendidoDesde)}.` : ''} `
       + 'No aparece en la búsqueda ni puede publicar packs; el trabajador sí puede entregar las reservas ya pagadas. '
       + 'Presenta la renovación de los documentos vencidos para reactivarlo.') : '',
+    seccionUbicacion(local),
     el('section', { className: 'tarjeta-panel' },
       el('h3', { textContent: aprobado ? 'Documentos del local' : 'Solicitud de afiliación' }),
       ...(aprobado ? seccionVigentes(doc, id) : seccionAfiliacion(doc, id))),

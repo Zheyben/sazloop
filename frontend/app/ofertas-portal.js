@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, tamanios, aviso, notificarError, notificarExito } from './comun.js';
+import { solicitar, el, dinero, tamanios, aviso, notificar, notificarError, notificarExito } from './comun.js';
 import { leerCarrito, guardarCarrito } from './portal.js';
 
 const filtrosPermitidos = ['distrito', 'direccion', 'precioMaximo', 'calificacionMinima'];
@@ -33,6 +33,22 @@ function nombreDestacado(nombre) {
   return espacio < 0 ? [nombre] : [nombre.slice(0, espacio), ' ', el('em', { textContent: nombre.slice(espacio + 1) })];
 }
 
+// Distancia en km con coma decimal y un decimal («1,2 km»). Menos de 100 m se muestra como «menos de 0,1 km».
+function textoDistancia(km) {
+  return km < 0.1 ? 'a menos de 0,1 km' : `a ${km.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+}
+
+// Pide la ubicación al navegador. Devuelve { lat, lng } o null si el usuario no acepta o falla.
+function pedirUbicacion() {
+  return new Promise(resolver => {
+    if (!navigator.geolocation) return resolver(null);
+    navigator.geolocation.getCurrentPosition(
+      posicion => resolver({ lat: posicion.coords.latitude, lng: posicion.coords.longitude }),
+      () => resolver(null),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  });
+}
+
 function iconoDato(tipo) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
@@ -58,6 +74,8 @@ export function iniciarOfertas(usuario, limite = null) {
   const alternarFiltros = document.querySelector('#alternar-filtros');
   const contadorFiltros = document.querySelector('#contador-filtros');
   let busquedaActual = 0;
+  let ubicacion = null;       // { lat, lng } mientras «Cerca de mí» está activo; nunca se guarda ni se manda a otro sitio
+  let mostrarDistancia = false; // las tarjetas muestran la distancia solo cuando el filtro está activo
   const valoresIniciales = new URLSearchParams(location.search);
   if (formulario) {
     for (const nombre of filtrosPermitidos) {
@@ -71,6 +89,18 @@ export function iniciarOfertas(usuario, limite = null) {
       alternarFiltros.setAttribute('aria-expanded', 'false');
       actualizarContador(params);
       buscar(params);
+    });
+    // «Cerca de mí»: al marcarla el navegador pide permiso; si no se concede, se avisa y se desmarca.
+    formulario.elements.cerca?.addEventListener('change', async evento => {
+      const casilla = evento.target;
+      if (!casilla.checked) { ubicacion = null; return; }
+      casilla.disabled = true;
+      ubicacion = await pedirUbicacion();
+      casilla.disabled = false;
+      if (!ubicacion) {
+        casilla.checked = false;
+        notificar({ icon: 'info', title: 'Activa la ubicación para usar este filtro' });
+      }
     });
     alternarFiltros.addEventListener('click', () => {
       const abrir = panelFiltros.hidden;
@@ -91,16 +121,30 @@ export function iniciarOfertas(usuario, limite = null) {
     return params;
   }
 
+  // Parámetros que se mandan al servidor: los filtros más la ubicación si «Cerca de mí» está activo.
+  // La ubicación no se pone en la dirección de la página (URL), para no compartirla sin querer.
+  function parametrosApi(params) {
+    const salida = new URLSearchParams(params);
+    if (ubicacion && formulario?.elements.cerca?.checked) {
+      salida.set('lat', ubicacion.lat.toFixed(6));
+      salida.set('lng', ubicacion.lng.toFixed(6));
+    }
+    return salida;
+  }
+
   function actualizarContador(params) {
-    contadorFiltros.textContent = params.size ? String(params.size) : '';
-    contadorFiltros.hidden = !params.size;
+    const total = params.size + (ubicacion && formulario?.elements.cerca?.checked ? 1 : 0);
+    contadorFiltros.textContent = total ? String(total) : '';
+    contadorFiltros.hidden = !total;
   }
 
   async function buscar(params) {
     const turno = ++busquedaActual;
     lista.replaceChildren(el('p', { className: 'estado-vacio', textContent: 'Buscando packs disponibles…' }));
+    const consulta = parametrosApi(params);
+    mostrarDistancia = consulta.has('lat');
     try {
-      const ofertas = await solicitar(`/ofertas${params.size ? '?' + params : ''}`);
+      const ofertas = await solicitar(`/ofertas${consulta.size ? '?' + consulta : ''}`);
       if (!lista.isConnected || turno !== busquedaActual) return;
       lista.replaceChildren(...(ofertas.length
         ? (limite ? ofertas.slice(0, limite) : ofertas).map(tarjeta)
@@ -124,6 +168,8 @@ export function iniciarOfertas(usuario, limite = null) {
         el('span', { className: 'pack-visual-calificacion', textContent: `★  ${o.calificacion != null ? Number(o.calificacion).toFixed(1) : '-'}` })),
       el('div', { className: 'pack-contenido' },
         el('p', { className: 'pack-local' }, iconoDato('ubicacion'), `${o.establecimiento} · ${o.distrito}`),
+        mostrarDistancia ? el('p', { className: `pack-distancia${o.distanciaKm == null ? ' sin-dato' : ''}` },
+          o.distanciaKm == null ? 'Distancia no disponible' : textoDistancia(Number(o.distanciaKm))) : '',
         el('h3', {}, ...nombreDestacado(o.pack)),
         el('p', { className: 'pack-horario' }, iconoDato('reloj'), horarioRecojo(o)),
         el('div', { className: 'pack-posibles' },

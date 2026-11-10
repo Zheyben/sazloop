@@ -91,6 +91,19 @@
 .cifra span { color: var(--secundario); font-size: .78rem; font-weight: 750; letter-spacing: .02em; }
 .cifra strong { color: var(--bosque); font: 400 clamp(1.55rem, 2.6vw, 2rem)/1.15 var(--serif); }
 .cifra small { color: var(--secundario); font-size: .78rem; }
+.ubicacion-registro { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; padding: .85rem 1rem; border: 1px dashed #c9d9a9; border-radius: 1rem; background: #f6faee; }
+.ubicacion-registro button { margin: 0; white-space: nowrap; }
+.ubicacion-estado { font-size: .85rem; color: var(--secundario); }
+.ubicacion-estado.lista { color: #2f5d2b; font-weight: 750; }
+.ubicacion-estado.lista::before { content: '✓ '; }
+.ubicacion-estado.error { color: #9a2f23; font-weight: 650; }
+.ubicacion-local { margin-top: 1rem; border-color: #c9d9a9; background: linear-gradient(135deg, #fbfdf6 0%, #f1f7e6 100%); }
+.ubicacion-local-cabecera { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.ubicacion-local-cabecera button { margin: 0; }
+.ubicacion-sello { display: inline-flex; align-items: center; gap: .4rem; padding: .22rem .75rem; border-radius: 999px; font-size: .8rem; font-weight: 800; }
+.ubicacion-sello::before { content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; }
+.ubicacion-sello.registrada { background: #e2efcc; color: #2f5d2b; }
+.ubicacion-sello.sin { background: #f2ebe0; color: #7a6a4e; }
 .cifra.impacto { position: relative; overflow: hidden; background: linear-gradient(145deg, #f1f7e6 0%, #e2efcc 100%); border-color: #c9d9a9; }
 .cifra.impacto::after { content: '🌿'; position: absolute; right: .7rem; top: .55rem; font-size: 1.15rem; opacity: .55; }
 .cifra.impacto strong { color: #2f5d2b; }
