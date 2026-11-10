@@ -35,7 +35,7 @@ function nombreDestacado(nombre) {
 
 // Distancia en km con coma decimal y un decimal («1,2 km»). Menos de 100 m se muestra como «menos de 0,1 km».
 function textoDistancia(km) {
-  return km < 0.1 ? 'a menos de 0,1 km' : `a ${km.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+  return km < 0.1 ? 'a menos de 0,1 km' : `a ${km.toFixed(1).replace('.', ',')} km`;
 }
 
 // Pide la ubicación al navegador. Devuelve { lat, lng } o null si el usuario no acepta o falla.

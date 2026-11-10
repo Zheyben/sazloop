@@ -1,6 +1,6 @@
 import { solicitar, el, dinero } from './comun.js';
 import {
-  pintarIconos, crearNavegacion, mensaje, estadoEn, insignia, banda, vacio, cifra, tabla, fecha,
+  pintarIconos, crearNavegacion, mensaje, estadoEn, insignia, banda, vacio, cifra, cifraImpacto, tabla, fecha,
   tiposDocumento, insigniaLocal, vigencias, listaAvisos
 } from './panel.js';
 
@@ -110,7 +110,7 @@ function pintarAlertas(locales) {
 }
 
 // Kilos con 1 decimal y coma decimal; un valor ausente cuenta como 0.
-const kg = n => Number(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const kg = n => Number(n || 0).toFixed(1).replace('.', ',');
 
 function tarjetaIndicadores(i, local) {
   const resenas = i.resenasRecientes || [];
