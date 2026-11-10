@@ -197,7 +197,7 @@ public class RevisionAfiliacionService {
                     + "su pack sorpresa. Motivo: " + motivo;
         } else if (!renovacion) {
             titulo = "Solicitud rechazada: " + local.getNombre();
-            mensaje = "Motivo: " + motivo + ". Puedes adjuntar nuevos documentos y enviar otra solicitud.";
+            mensaje = "Motivo: " + sinPuntuacionFinal(motivo) + ". Puedes adjuntar nuevos documentos y enviar otra solicitud.";
         } else if (aprobada) {
             titulo = "Renovación aprobada: " + local.getNombre();
             mensaje = (reactivado ? "El local fue reactivado y vuelve a aparecer en la búsqueda. "
@@ -205,7 +205,7 @@ public class RevisionAfiliacionService {
                     : "Los documentos renovados reemplazan a los anteriores. ") + "Motivo: " + motivo;
         } else {
             titulo = "Renovación rechazada: " + local.getNombre();
-            mensaje = "Motivo: " + motivo + ". " + (suspendido
+            mensaje = "Motivo: " + sinPuntuacionFinal(motivo) + ". " + (suspendido
                     ? "El local sigue suspendido; presenta nuevamente los documentos vencidos."
                     : "Presenta nuevamente los documentos antes de que venzan.");
         }
@@ -237,6 +237,10 @@ public class RevisionAfiliacionService {
 
     private SolicitudAfiliacion solicitud(Long id) {
         return solicitudes.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+    /** Quita los puntos y espacios del final para que, al añadir ". ", no quede «..». */
+    private static String sinPuntuacionFinal(String motivo) {
+        return motivo.replaceAll("[.\s]+$", "");
     }
     private DocumentoEstablecimiento documento(Long id) {
         return documentos.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));

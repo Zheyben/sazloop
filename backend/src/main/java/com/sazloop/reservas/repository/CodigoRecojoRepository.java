@@ -9,8 +9,15 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 
 public interface CodigoRecojoRepository extends JpaRepository<CodigoRecojo, Long> {
-    Optional<CodigoRecojo> findByCodigo(String codigo);
+    /** Busca ignorando guiones, espacios y mayúsculas: "abbafe9e4869" equivale a "ABBAFE9E-4869-4A". */
+    @Query("select c from CodigoRecojo c where upper(replace(c.codigo, '-', '')) = :codigo")
+    Optional<CodigoRecojo> findByCodigo(@Param("codigo") String codigo);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select c from CodigoRecojo c where c.codigo = :codigo")
+    @Query("select c from CodigoRecojo c where upper(replace(c.codigo, '-', '')) = :codigo")
     Optional<CodigoRecojo> bloquear(@Param("codigo") String codigo);
+
+    /** Quita espacios y guiones y pasa a mayúsculas, igual que se normaliza el código guardado. */
+    static String normalizar(String codigo) {
+        return codigo == null ? "" : codigo.replaceAll("[\s-]", "").toUpperCase(java.util.Locale.ROOT);
+    }
 }

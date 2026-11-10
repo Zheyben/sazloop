@@ -93,6 +93,11 @@ public class CompraPresencialService {
         Consumidor consumidor = consumidores.findByUsuario_Id(usuarioId)
                 .orElseGet(() -> consumidores.save(Consumidor.builder().usuario(usuario).build()));
         if (!consumidor.isActivo()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        // El token del QR no cambia durante la oferta: solo se permite una reserva en efectivo pendiente a la vez.
+        if (retenciones.existsByConsumidor_IdAndEstadoAndFechaExpiracionAfter(
+                consumidor.getId(), RetencionStock.EstadoRetencion.ACTIVA, ahora))
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ya tienes una reserva en efectivo pendiente. Confírmala en el local o espera a que venza");
         LocalDateTime vence = ahora.plusMinutes(10);
         if (vence.isAfter(oferta.getFinRecojo())) vence = oferta.getFinRecojo();
         Reserva reserva = Reserva.builder().consumidor(consumidor).oferta(oferta)
@@ -151,7 +156,7 @@ public class CompraPresencialService {
     }
 
     private Long codigoReserva(String codigo) {
-        return codigos.findByCodigo(codigo.trim().toUpperCase(Locale.ROOT))
+        return codigos.findByCodigo(CodigoRecojoRepository.normalizar(codigo))
                 .map(registro -> registro.getReserva().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }

@@ -36,6 +36,17 @@ public class NotificacionService {
             crear(destinatario, tipo, titulo, mensaje, referencia, referenciaId);
     }
 
+    /** Marca como leídos los avisos de un tipo ligados a un registro (p. ej. el recordatorio de un pedido). */
+    @Transactional
+    public void leerPorReferencia(Long usuarioId, Notificacion.TipoNotificacion tipo, String referencia, Long referenciaId) {
+        LocalDateTime ahora = LocalDateTime.now();
+        avisos.findByDestinatario_IdAndTipoAndTipoReferenciaAndReferenciaId(usuarioId, tipo, referencia, referenciaId)
+                .stream().filter(a -> !a.isLeida()).forEach(a -> {
+                    a.setLeida(true);
+                    a.setFechaLectura(ahora);
+                });
+    }
+
     @Transactional(readOnly = true)
     public List<Aviso> listar(Long usuarioId) {
         return avisos.findByDestinatario_IdOrderByIdDesc(usuarioId).stream()

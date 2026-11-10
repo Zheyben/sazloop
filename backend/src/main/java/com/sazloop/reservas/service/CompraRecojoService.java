@@ -141,6 +141,7 @@ public class CompraRecojoService {
         reserva.setRecojo(Recojo.builder().reserva(reserva).confirmadoPor(cuenta).build());
         reservas.saveAndFlush(reserva);
         impactos.save(ImpactoCO2Evitado.builder().recojo(reserva.getRecojo()).build());
+        avisos.cerrarRecordatorio(reserva);
         return respuesta(reserva);
     }
 
@@ -149,7 +150,7 @@ public class CompraRecojoService {
     }
 
     private Reserva reservaDelLocal(CuentaEstablecimiento cuenta, String codigo, boolean bloquear) {
-        String valor = codigo.trim().toUpperCase(Locale.ROOT);
+        String valor = CodigoRecojoRepository.normalizar(codigo);
         CodigoRecojo encontrado = (bloquear ? codigos.bloquear(valor) : codigos.findByCodigo(valor))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Reserva reserva = encontrado.getReserva();

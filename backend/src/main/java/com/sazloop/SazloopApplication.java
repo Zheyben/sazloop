@@ -40,6 +40,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class SazloopApplication {
 
+    /** Todo el sistema trabaja con la hora de Perú, sin importar la zona de la computadora donde corra. */
+    public static final String ZONA = "America/Lima";
+    static { java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(ZONA)); }
+
     // =========================================================
     // MÉTODO MAIN
     // El punto de entrada de cualquier programa Java.

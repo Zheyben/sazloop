@@ -32,13 +32,21 @@ public class AvisosReservaService {
                         + ". Si no lo recoges dentro del horario, el pedido se cerrará sin entrega.");
     }
 
+    /** Al entregarse, cancelarse o vencer el pedido, el recordatorio de recojo ya no sirve: se marca como leído. */
+    public void cerrarRecordatorio(Reserva reserva) {
+        notificaciones.leerPorReferencia(reserva.getConsumidor().getUsuario().getId(),
+                TipoNotificacion.RECORDATORIO_RECOJO, REFERENCIA, reserva.getId());
+    }
+
     public void cancelada(Reserva reserva, BigDecimal reembolso) {
+        cerrarRecordatorio(reserva);
         avisar(reserva, TipoNotificacion.CAMBIO_RESERVA, "Compra cancelada: " + local(reserva),
                 "Registramos un reembolso simulado de S/ " + reembolso + " (50 % del total). El código "
                         + reserva.getCodigoRecojo().getCodigo() + " ya no es válido.");
     }
 
     public void noRecogida(Reserva reserva) {
+        cerrarRecordatorio(reserva);
         avisar(reserva, TipoNotificacion.CAMBIO_RESERVA, "Pedido no recogido: " + local(reserva),
                 "El horario de recojo terminó el " + reserva.getOferta().getFinRecojo().format(FECHA) + " a las "
                         + reserva.getOferta().getFinRecojo().format(HORA)

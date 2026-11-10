@@ -31,7 +31,7 @@ public class CuentaLocalService {
         if (!local.getEmpresa().getPropietario().getUsuario().getId().equals(propietarioId))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         if (!puedeOperar(local))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El local debe estar aprobado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El local debe haber sido aprobado");
         if (cuentas.findByEstablecimiento_Id(localId).isPresent())
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El local ya tiene cuenta");
         String nombre = entrada.nombreUsuario().trim().toLowerCase(Locale.ROOT);
