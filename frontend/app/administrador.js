@@ -62,7 +62,7 @@ async function abrirSolicitud(id) {
         el('p', { textContent: `${s.empresa} · RUC ${s.ruc} · ${s.direccion}, ${s.distrito}` })),
       insigniaLocal(s.estadoLocal)),
     s.renovacion ? banda('info', 'Renovación',
-      'Al aprobarla, estos documentos reemplazan a los anteriores del mismo tipo. Si el local está suspendido y ya no le quedan documentos vencidos, se reactiva automáticamente.') : null,
+      'Al aprobarla, estos documentos reemplazan a los anteriores del mismo tipo. Si el local está suspendido y ya no le quedan documentos vencidos, se reactiva automáticamente.') : '',
     s.estado === 'EN_REVISION' ? formularioResolucion(s)
       : el('div', {}, ...s.documentos.map(tarjetaLectura),
         banda('info', 'Solicitud resuelta', s.motivoDecision ? `Motivo: ${s.motivoDecision}` : '')));

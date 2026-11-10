@@ -20,7 +20,7 @@ async function cargar() {
     zona.replaceChildren(
       avisos.some(a => !a.leida) ? el('div', { className: 'avisos-acciones' },
         el('button', { type: 'button', className: 'secundario', textContent: 'Marcar todas como leídas',
-          onclick: () => marcar('/notificaciones/leer-todas') })) : null,
+          onclick: () => marcar('/notificaciones/leer-todas') })) : '',
       el('ul', { className: 'lista-avisos' }, ...avisos.map(a => el('li', { className: `aviso-item${a.leida ? '' : ' no-leida'}` },
         el('strong', { textContent: a.titulo }),
         el('p', { textContent: a.mensaje }),

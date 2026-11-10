@@ -360,7 +360,7 @@ function pintarCompra(compra, codigo, recienEntregada = false) {
     recienEntregada ? el('div', { className: 'confirmado', role: 'status' }, el('span', { ariaHidden: 'true', textContent: '✓' }),
       el('div', {}, el('strong', { textContent: 'Entrega confirmada correctamente' }),
         el('p', { style: 'margin:.2rem 0 0; font-weight:500', textContent:
-          `El código quedó utilizado. Venta ${dinero(compra.total)} − comisión de Sazloop ${dinero(comision)} = ganancia neta ${dinero(Number(compra.total) - comision)}; ya figura en «Pack sorpresa».` }))) : null,
+          `El código quedó utilizado. Venta ${dinero(compra.total)} − comisión de Sazloop ${dinero(comision)} = ganancia neta ${dinero(Number(compra.total) - comision)}; ya figura en «Pack sorpresa».` }))) : '',
     el('article', { className: 'tarjeta-panel', style: recienEntregada ? 'margin-top:1rem' : '' },
       el('header', {}, el('span', { className: 'codigo-grande', textContent: compra.codigoRecojo }), insignia(texto, tono)),
       el('span', { className: 'dato-titulo', textContent: 'Entregar' }),
