@@ -3,6 +3,7 @@ package com.sazloop.afiliacion.service;
 import com.sazloop.afiliacion.domain.AdministradorPlataforma;
 import com.sazloop.afiliacion.repository.AdministradorPlataformaRepository;
 import com.sazloop.identidad.service.CodificadorContrasena;
+import com.sazloop.shared.LimiteIntentosLogin;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -18,18 +19,27 @@ import java.util.Locale;
 public class AdministradorService {
     private final AdministradorPlataformaRepository administradores;
     private final CodificadorContrasena codificador;
+    private final LimiteIntentosLogin limite;
 
     public AdministradorService(AdministradorPlataformaRepository administradores,
-                                CodificadorContrasena codificador) {
+                                CodificadorContrasena codificador, LimiteIntentosLogin limite) {
         this.administradores = administradores;
         this.codificador = codificador;
+        this.limite = limite;
     }
 
     @Transactional(readOnly = true)
     public AdministradorPlataforma iniciar(String email, String clave) {
-        AdministradorPlataforma admin = administradores.findByEmailInstitucionalIgnoreCase(
-                email.trim()).orElseThrow(AdministradorService::denegado);
-        if (!admin.isActivo() || !codificador.coincide(clave, admin.getPasswordHash())) throw denegado();
+        limite.exigirDisponible(LimiteIntentosLogin.ADMINISTRADOR, email);
+        AdministradorPlataforma admin = administradores.findByEmailInstitucionalIgnoreCase(email.trim()).orElse(null);
+        // Si el correo no existe se calcula igual el PBKDF2, para responder en el mismo tiempo.
+        boolean correcto = admin == null ? codificador.rellenar(clave)
+                : codificador.coincide(clave, admin.getPasswordHash()) && admin.isActivo();
+        if (!correcto) {
+            limite.registrarFallo(LimiteIntentosLogin.ADMINISTRADOR, email);
+            throw denegado();
+        }
+        limite.registrarExito(LimiteIntentosLogin.ADMINISTRADOR, email);
         return admin;
     }
 

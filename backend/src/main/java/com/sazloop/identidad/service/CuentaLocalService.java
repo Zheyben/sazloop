@@ -3,6 +3,7 @@ package com.sazloop.identidad.service;
 import com.sazloop.identidad.domain.*;
 import com.sazloop.identidad.dto.CuentaLocalRequest;
 import com.sazloop.identidad.repository.*;
+import com.sazloop.shared.LimiteIntentosLogin;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,9 +17,12 @@ public class CuentaLocalService {
     private final EstablecimientoRepository establecimientos;
     private final CuentaEstablecimientoRepository cuentas;
     private final CodificadorContrasena codificador;
+    private final LimiteIntentosLogin limite;
 
     public CuentaLocalService(EstablecimientoRepository establecimientos,
-            CuentaEstablecimientoRepository cuentas, CodificadorContrasena codificador) {
+            CuentaEstablecimientoRepository cuentas, CodificadorContrasena codificador,
+            LimiteIntentosLogin limite) {
+        this.limite = limite;
         this.establecimientos = establecimientos;
         this.cuentas = cuentas;
         this.codificador = codificador;
@@ -43,10 +47,18 @@ public class CuentaLocalService {
 
     @Transactional
     public CuentaEstablecimiento iniciar(CuentaLocalRequest entrada) {
-        CuentaEstablecimiento cuenta = cuentas.findByNombreUsuarioIgnoreCase(entrada.nombreUsuario().trim())
-                .orElseThrow(CuentaLocalService::denegado);
-        if (!cuenta.isActiva() || !puedeOperar(cuenta.getEstablecimiento()) ||
-                !codificador.coincide(entrada.contrasena(), cuenta.getPasswordHash())) throw denegado();
+        String id = entrada.nombreUsuario();
+        limite.exigirDisponible(LimiteIntentosLogin.LOCAL, id);
+        CuentaEstablecimiento cuenta = cuentas.findByNombreUsuarioIgnoreCase(id.trim()).orElse(null);
+        // Si el usuario no existe se calcula igual el PBKDF2, para responder en el mismo tiempo.
+        boolean correcto = cuenta == null ? codificador.rellenar(entrada.contrasena())
+                : codificador.coincide(entrada.contrasena(), cuenta.getPasswordHash())
+                        && cuenta.isActiva() && puedeOperar(cuenta.getEstablecimiento());
+        if (!correcto) {
+            limite.registrarFallo(LimiteIntentosLogin.LOCAL, id);
+            throw denegado();
+        }
+        limite.registrarExito(LimiteIntentosLogin.LOCAL, id);
         cuenta.setUltimoAcceso(LocalDateTime.now());
         return cuenta;
     }

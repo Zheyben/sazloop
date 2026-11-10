@@ -4,6 +4,7 @@ import com.sazloop.identidad.domain.Usuario;
 import com.sazloop.identidad.dto.InicioSesionRequest;
 import com.sazloop.identidad.dto.UsuarioResponse;
 import com.sazloop.identidad.repository.UsuarioRepository;
+import com.sazloop.shared.LimiteIntentosLogin;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,19 +15,28 @@ import org.springframework.web.server.ResponseStatusException;
 public class SesionUsuarioService {
     private final UsuarioRepository usuarios;
     private final CodificadorContrasena codificador;
+    private final LimiteIntentosLogin limite;
 
-    public SesionUsuarioService(UsuarioRepository usuarios, CodificadorContrasena codificador) {
+    public SesionUsuarioService(UsuarioRepository usuarios, CodificadorContrasena codificador,
+                                LimiteIntentosLogin limite) {
         this.usuarios = usuarios;
         this.codificador = codificador;
+        this.limite = limite;
     }
 
     @Transactional(readOnly = true)
     public UsuarioResponse iniciar(InicioSesionRequest entrada) {
-        Usuario usuario = usuarios.findByEmailIgnoreCase(entrada.email().trim())
-                .orElseThrow(SesionUsuarioService::accesoDenegado);
-        if (!usuario.isActivo() || !codificador.coincide(entrada.contrasena(), usuario.getPasswordHash())) {
+        String id = entrada.email();
+        limite.exigirDisponible(LimiteIntentosLogin.PERSONA, id);
+        Usuario usuario = usuarios.findByEmailIgnoreCase(id.trim()).orElse(null);
+        // Si el correo no existe se calcula igual el PBKDF2, para responder en el mismo tiempo.
+        boolean correcto = usuario == null ? codificador.rellenar(entrada.contrasena())
+                : codificador.coincide(entrada.contrasena(), usuario.getPasswordHash()) && usuario.isActivo();
+        if (!correcto) {
+            limite.registrarFallo(LimiteIntentosLogin.PERSONA, id);
             throw accesoDenegado();
         }
+        limite.registrarExito(LimiteIntentosLogin.PERSONA, id);
         return respuesta(usuario);
     }
 

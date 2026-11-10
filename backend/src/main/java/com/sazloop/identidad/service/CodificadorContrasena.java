@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.UUID;
 
 /** Codifica contraseñas con sal aleatoria y PBKDF2; permite verificar el acceso posterior. */
 @Component
@@ -17,6 +18,17 @@ public class CodificadorContrasena {
     private static final int BYTES_SAL = 16;
     private static final int BITS_HASH = 256;
     private final SecureRandom aleatorio = new SecureRandom();
+    /** Hash de relleno, creado una vez al arrancar: se usa cuando el correo o usuario no existe. */
+    private final String hashRelleno = codificar(UUID.randomUUID().toString());
+
+    /**
+     * Hace el mismo cálculo PBKDF2 aunque la cuenta no exista, para que el tiempo de respuesta no
+     * revele qué correos o usuarios están registrados. Siempre devuelve false.
+     */
+    public boolean rellenar(String contrasena) {
+        coincide(contrasena, hashRelleno);
+        return false;
+    }
 
     public String codificar(String contrasena) {
         byte[] sal = new byte[BYTES_SAL];

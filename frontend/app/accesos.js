@@ -66,7 +66,13 @@ async function enviar(formulario, ruta, destino) {
         401: 'Revisa tus credenciales e intenta de nuevo.',
         409: 'La cuenta ya existe o no se puede completar la operación.'
       };
-      const error = new Error(textos[respuesta.status] || 'No se pudo completar la operación.');
+      // 429: el servidor bloqueó la cuenta por demasiados intentos fallidos y manda el mensaje a mostrar.
+      let motivo = '';
+      if (respuesta.status === 429) {
+        try { motivo = (await respuesta.json())?.message || ''; } catch { /* respuesta sin cuerpo JSON */ }
+        motivo = motivo || 'Demasiados intentos fallidos. Espera 5 minutos e inténtalo de nuevo.';
+      }
+      const error = new Error(motivo || textos[respuesta.status] || 'No se pudo completar la operación.');
       error.status = respuesta.status;
       throw error;
     }
