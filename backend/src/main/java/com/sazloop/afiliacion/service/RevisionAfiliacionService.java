@@ -240,7 +240,7 @@ public class RevisionAfiliacionService {
     }
     /** Quita los puntos y espacios del final para que, al añadir ". ", no quede «..». */
     private static String sinPuntuacionFinal(String motivo) {
-        return motivo.replaceAll("[.\s]+$", "");
+        return motivo.replaceAll("[.\\s]+$", "");
     }
     private DocumentoEstablecimiento documento(Long id) {
         return documentos.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));

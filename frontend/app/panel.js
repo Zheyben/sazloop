@@ -90,6 +90,13 @@ export function cifra(etiqueta, valor, detalle = '', destacada = false) {
     detalle ? el('small', { textContent: detalle }) : null);
 }
 
+/** Cifra de impacto ambiental: mismo formato que cifra(), con un acabado verde y una hoja de adorno. */
+export function cifraImpacto(etiqueta, valor, detalle = '') {
+  const nodo = cifra(etiqueta, valor, detalle);
+  nodo.classList.add('impacto');
+  return nodo;
+}
+
 export function tabla(columnas, filas, pie = null) {
   const encabezado = el('tr', {}, ...columnas.map(([texto, clase]) =>
     el('th', { scope: 'col', textContent: texto, className: clase || '' })));

@@ -91,6 +91,9 @@
 .cifra span { color: var(--secundario); font-size: .78rem; font-weight: 750; letter-spacing: .02em; }
 .cifra strong { color: var(--bosque); font: 400 clamp(1.55rem, 2.6vw, 2rem)/1.15 var(--serif); }
 .cifra small { color: var(--secundario); font-size: .78rem; }
+.cifra.impacto { position: relative; overflow: hidden; background: linear-gradient(145deg, #f1f7e6 0%, #e2efcc 100%); border-color: #c9d9a9; }
+.cifra.impacto::after { content: '🌿'; position: absolute; right: .7rem; top: .55rem; font-size: 1.15rem; opacity: .55; }
+.cifra.impacto strong { color: #2f5d2b; }
 .cifra.destacada { background: var(--bosque); border-color: var(--bosque); }
 .cifra.destacada span, .cifra.destacada small { color: var(--p-claro); }
 .cifra.destacada strong { color: #fff; }

@@ -18,6 +18,6 @@ public interface CodigoRecojoRepository extends JpaRepository<CodigoRecojo, Long
 
     /** Quita espacios y guiones y pasa a mayúsculas, igual que se normaliza el código guardado. */
     static String normalizar(String codigo) {
-        return codigo == null ? "" : codigo.replaceAll("[\s-]", "").toUpperCase(java.util.Locale.ROOT);
+        return codigo == null ? "" : codigo.replaceAll("[\\s-]", "").toUpperCase(java.util.Locale.ROOT);
     }
 }

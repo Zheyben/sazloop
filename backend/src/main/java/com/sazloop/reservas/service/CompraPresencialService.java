@@ -1,8 +1,7 @@
 package com.sazloop.reservas.service;
 
 import com.sazloop.identidad.domain.*;
-import com.sazloop.experiencia.domain.ImpactoCO2Evitado;
-import com.sazloop.experiencia.repository.ImpactoCO2EvitadoRepository;
+import com.sazloop.experiencia.service.ImpactoService;
 import com.sazloop.identidad.repository.*;
 import com.sazloop.ofertas.domain.*;
 import com.sazloop.ofertas.repository.OfertaPackRepository;
@@ -29,18 +28,18 @@ public class CompraPresencialService {
     private final CodigoRecojoRepository codigos;
     private final UsuarioRepository usuarios;
     private final ConsumidorRepository consumidores;
-    private final ImpactoCO2EvitadoRepository impactos;
+    private final ImpactoService impacto;
     private final AvisosReservaService avisos;
 
     public CompraPresencialService(CompraRecojoService compras, OfertaPackRepository ofertas,
             ReservaRepository reservas, RetencionStockRepository retenciones,
             CodigoRecojoRepository codigos, UsuarioRepository usuarios,
-            ConsumidorRepository consumidores, ImpactoCO2EvitadoRepository impactos,
+            ConsumidorRepository consumidores, ImpactoService impacto,
             AvisosReservaService avisos) {
         this.compras = compras; this.ofertas = ofertas; this.reservas = reservas;
         this.retenciones = retenciones; this.codigos = codigos;
         this.usuarios = usuarios; this.consumidores = consumidores;
-        this.impactos = impactos; this.avisos = avisos;
+        this.impacto = impacto; this.avisos = avisos;
     }
 
     @Transactional
@@ -151,7 +150,7 @@ public class CompraPresencialService {
         ComisionService.recalcular(reserva.getPago(), reserva.getMontoTotal());
         holds.forEach(hold -> hold.setEstado(RetencionStock.EstadoRetencion.CONFIRMADA));
         reservas.saveAndFlush(reserva);
-        impactos.save(ImpactoCO2Evitado.builder().recojo(reserva.getRecojo()).build());
+        impacto.registrar(reserva);
         return compras.consultarCodigo(cuenta, codigo);
     }
 

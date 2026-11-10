@@ -1,8 +1,7 @@
 package com.sazloop.reservas.service;
 
 import com.sazloop.experiencia.repository.ResenaRepository;
-import com.sazloop.experiencia.repository.ImpactoCO2EvitadoRepository;
-import com.sazloop.experiencia.domain.ImpactoCO2Evitado;
+import com.sazloop.experiencia.service.ImpactoService;
 import com.sazloop.identidad.domain.*;
 import com.sazloop.identidad.repository.*;
 import com.sazloop.ofertas.domain.*;
@@ -29,15 +28,15 @@ public class CompraRecojoService {
     private final ConsumidorRepository consumidores;
     private final UsuarioRepository usuarios;
     private final ResenaRepository resenas;
-    private final ImpactoCO2EvitadoRepository impactos;
+    private final ImpactoService impacto;
     private final AvisosReservaService avisos;
 
     public CompraRecojoService(OfertaPackRepository ofertas, ReservaRepository reservas,
             CodigoRecojoRepository codigos, ConsumidorRepository consumidores, UsuarioRepository usuarios,
-            ResenaRepository resenas, ImpactoCO2EvitadoRepository impactos, AvisosReservaService avisos) {
+            ResenaRepository resenas, ImpactoService impacto, AvisosReservaService avisos) {
         this.ofertas = ofertas; this.reservas = reservas; this.codigos = codigos;
         this.consumidores = consumidores; this.usuarios = usuarios; this.resenas = resenas;
-        this.impactos = impactos; this.avisos = avisos;
+        this.impacto = impacto; this.avisos = avisos;
     }
 
     /** Una falla en cualquier pedido revierte el pago y todas las reservas del lote. */
@@ -140,7 +139,7 @@ public class CompraRecojoService {
         reserva.setEstado(Reserva.EstadoReserva.RECOGIDA);
         reserva.setRecojo(Recojo.builder().reserva(reserva).confirmadoPor(cuenta).build());
         reservas.saveAndFlush(reserva);
-        impactos.save(ImpactoCO2Evitado.builder().recojo(reserva.getRecojo()).build());
+        impacto.registrar(reserva);
         avisos.cerrarRecordatorio(reserva);
         return respuesta(reserva);
     }

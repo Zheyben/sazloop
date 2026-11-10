@@ -80,7 +80,9 @@ async function cargarResumen() {
     cifra('No recogidas', String(total.noRecogidas), 'Pagadas y sin entrega'),
     cifra('Calificación', total.cantidadResenas ? `${Number(total.calificacionPromedio).toFixed(1)} / 5` : '—',
       `${total.cantidadResenas} ${total.cantidadResenas === 1 ? 'reseña' : 'reseñas'}`),
-    cifra('Packs entregados', String(total.packsEntregados), 'Entregados en vez de descartados'));
+    cifra('Packs entregados', String(total.packsEntregados), 'Entregados en vez de descartados'),
+    cifraImpacto('Comida recuperada', `${kg(total.alimentoRecuperadoKg)} kg`, 'En todos tus locales'),
+    cifraImpacto('CO₂ evitado', `${kg(total.co2EvitadoKg)} kg`, 'Estimado con datos de la FAO'));
   if (!establecimientos.length) {
     detalle.replaceChildren(vacio('Aún no tienes locales', 'Registra tu primer establecimiento para empezar.',
       el('button', { type: 'button', textContent: 'Agregar local', onclick: () => { mostrar('locales'); abrirFormularioLocal(); } })));
@@ -107,6 +109,9 @@ function pintarAlertas(locales) {
   document.querySelector('#alertas-resumen').replaceChildren(...alertas);
 }
 
+// Kilos con 1 decimal y coma decimal; un valor ausente cuenta como 0.
+const kg = n => Number(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 function tarjetaIndicadores(i, local) {
   const resenas = i.resenasRecientes || [];
   return el('article', { className: 'tarjeta-panel', style: 'margin-top:1rem' },
@@ -122,7 +127,9 @@ function tarjetaIndicadores(i, local) {
       cifra('No recogidas', String(i.noRecogidas), 'Pagadas y sin entrega'),
       cifra('Calificación', i.cantidadResenas ? `${Number(i.calificacionPromedio).toFixed(1)} / 5` : '—',
         `${i.cantidadResenas} ${i.cantidadResenas === 1 ? 'reseña' : 'reseñas'}`),
-      cifra('Packs entregados', String(i.packsEntregados), 'Impacto de este local')),
+      cifra('Packs entregados', String(i.packsEntregados), 'Impacto de este local'),
+      cifraImpacto('Comida recuperada', `${kg(i.alimentoRecuperadoKg)} kg`, 'De este local'),
+      cifraImpacto('CO₂ evitado', `${kg(i.co2EvitadoKg)} kg`, 'De este local')),
     el('h4', { style: 'margin:1.2rem 0 .6rem; color: var(--bosque); font: 400 1.2rem/1.2 var(--serif)', textContent: 'Reseñas recientes' }),
     resenas.length
       ? el('ul', { className: 'lista-avisos' }, ...resenas.map(r => el('li', { className: 'aviso-item', style: 'grid-template-columns:1fr' },
