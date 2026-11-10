@@ -297,8 +297,9 @@ async function mostrarCarrito() {
     el('div', { className: 'carrito-total-fila' }, el('span', { textContent: 'Total de todos los pedidos' }), total),
     el('p', { className: 'carrito-nota', textContent: 'Todos los pedidos se pagan en una sola operación; cada uno genera su propia boleta y su código de recojo.' }),
     el('span', { className: 'pack-dato-etiqueta', textContent: 'MEDIO DE PAGO' }), medio, metodos, yape, tarjeta,
-    el('details', {}, el('summary', { textContent: 'Términos y condiciones' }),
-      el('p', { textContent: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aceptar para confirmar la compra.' })),
+    el('p', { className: 'carrito-nota carrito-terminos-resumen' },
+      'Pagos simulados. El pack es sorpresa; solo se cancela hasta el fin del horario de recojo, con reembolso del 50 %, y si no recoges a tiempo no hay reembolso. ',
+      el('a', { href: 'terminos.html', target: '_blank', rel: 'noopener', textContent: 'Leer términos completos' })),
     el('label', { className: 'carrito-terminos' }, terminos, ' Acepto los términos y condiciones'),
     mensajePago, confirmar, mensaje));
   zona.replaceChildren(formulario);

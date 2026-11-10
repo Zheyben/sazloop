@@ -404,3 +404,11 @@
   .resena-estrella { width: 46px; font-size: 2.3rem; }
   .carrito-pedido { padding: 1.1rem; }
 }
+
+/* Términos y condiciones: lista numerada en tarjetas */
+.terminos-lista { list-style: none; counter-reset: termino; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
+.terminos-lista li { counter-increment: termino; position: relative; padding-left: 3rem; }
+.terminos-lista li::before { content: counter(termino); position: absolute; left: 0; top: .1rem; width: 2.1rem; height: 2.1rem; display: grid; place-items: center; border-radius: 50%; background: var(--marfil); border: 1px solid #c9d6b4; font-weight: 700; color: var(--secundario); }
+.terminos-lista h2 { margin: 0 0 .25rem; font-size: 1.05rem; }
+.terminos-lista p { margin: 0; }
+.carrito-terminos-resumen a { font-weight: 700; }
