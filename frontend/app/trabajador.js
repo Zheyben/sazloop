@@ -1,4 +1,4 @@
-import { solicitar, el, dinero, tamanios, notificar, notificarError, esFalloDeRed, esDelivery, textoDelivery } from './comun.js';
+import { solicitar, el, dinero, tamanios, notificar, notificarError, esFalloDeRed, esDelivery, textoDelivery, conPunto } from './comun.js';
 import {
   pintarIconos, crearNavegacion, mensaje, estadoEn, insignia, banda, vacio, cifra, tabla,
   rangoHorario, hora, fecha, filasDieta
@@ -63,7 +63,7 @@ const suspendido = () => resumen?.estadoLocal === 'SUSPENDIDO';
 function pintarSuspension() {
   document.querySelector('#aviso-suspension').replaceChildren(...(suspendido() ? [banda('peligro',
     'Local suspendido por documentos vencidos',
-    `${resumen.motivoSuspension || 'Un documento obligatorio venció.'} Puedes validar códigos y entregar las reservas ya pagadas, `
+    `${conPunto(resumen.motivoSuspension || 'Un documento obligatorio venció.')} Puedes validar códigos y entregar las reservas ya pagadas, `
     + 'pero no publicar packs hasta que tu empresa renueve los documentos y Sazloop apruebe la renovación.')] : []));
 }
 

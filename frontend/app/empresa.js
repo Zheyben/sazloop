@@ -1,4 +1,4 @@
-import { solicitar, el, dinero } from './comun.js';
+import { solicitar, el, dinero, conPunto } from './comun.js';
 import {
   pintarIconos, crearNavegacion, mensaje, estadoEn, insignia, banda, vacio, cifra, cifraImpacto, tabla, fecha,
   tiposDocumento, insigniaLocal, vigencias, listaAvisos
@@ -261,7 +261,7 @@ async function abrirLocal(id, aviso = '', titulo) {
         el('p', { textContent: `${local.direccion}, ${local.distrito}` })),
       insigniaLocal(local.estado)),
     local.estado === 'SUSPENDIDO' ? banda('peligro', 'Local suspendido',
-      `${doc.motivoSuspension || 'Un documento obligatorio venció.'}${doc.suspendidoDesde ? ` Suspendido desde el ${fecha(doc.suspendidoDesde)}.` : ''} `
+      `${conPunto(doc.motivoSuspension || 'Un documento obligatorio venció.')}${doc.suspendidoDesde ? ` Suspendido desde el ${fecha(doc.suspendidoDesde)}.` : ''} `
       + 'No aparece en la búsqueda ni puede publicar packs; el trabajador sí puede entregar las reservas ya pagadas. '
       + 'Presenta la renovación de los documentos vencidos para reactivarlo.') : '',
     seccionUbicacion(local),

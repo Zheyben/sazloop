@@ -48,6 +48,8 @@ export const tamanios = { PEQUENO: 'Pequeño', MEDIANO: 'Mediano', GRANDE: 'Gran
 
 // Delivery simulado: empresas disponibles y cómo se describe la entrega de una compra.
 export const empresasDelivery = { PEDIDOSYA: 'PedidosYa', RAPPI: 'Rappi', INDRIVE: 'inDrive' };
+// Agrega el punto final si el texto no termina en puntuación (los motivos vienen sin punto: «… (venció el 09/11/2026)»).
+export const conPunto = texto => { const t = String(texto).trim(); return /[.!?…]$/.test(t) ? t : `${t}.`; };
 export const esDelivery = compra => compra?.modalidad === 'DELIVERY';
 // «PedidosYa – Av. Larco 123, Miraflores (frente al parque)»
 export function textoDelivery(compra) {
