@@ -4,6 +4,34 @@ El texto de `Proyecto_final.docx` ya se corrigió para que coincida con el códi
 
 Al terminar las tres, actualiza la tabla de contenido del informe (al final de este archivo).
 
+## Estado (11 de noviembre de 2026)
+
+| Tarea | Estado | Qué se hizo |
+|---|---|---|
+| E1.1 Casos de uso | Hecho | 6 textos cambiados, 3 extensiones `«extend»` nuevas (la condición va dentro de cada óvalo) y nota «(recojo o entrega completada)» bajo CU/RF-23. Se borró un texto oculto «include» del rectángulo de Transacciones que quedaba a la vista al ensanchar el módulo. |
+| E1.2 Clases | Hecho | `Direccion`, `Reserva` (5 atributos y 2 métodos nuevos) e `ImpactoCO2Evitado` (opcional d). `Recojo` y sus etiquetas bajaron 112 px para que no se monte con `Reserva`. No se dibujaron cajas `«enumeration»`. |
+| E1.3 Entidad-relación | Hecho | 7 columnas en el `.txt`. La imagen se generó desde ese archivo con la misma distribución por módulos de la figura anterior (`codigos_recojo` y `recojos` bajaron para dejar sitio a `reservas`). La fuente de la Figura 03 dice ahora «a partir del modelo en formato DBML». |
+| Imágenes de los diagramas | Hecho | PNG en `docs/diagramas/` y en las Figuras 01 a 03 del informe (se quitaron las copias SVG viejas). |
+| E2.1, E2.2, E2.4, E2.6, E2.7 | Hecho | Figuras 09, 10, 12, 17 (con la nueva parte c) y 18, completas con los datos demo, y sus pies de figura. |
+| E2.3 (Figura 11) y E2.5 (Figura 13) | No hecho | Eran opcionales; siguen las capturas del 12 de octubre. La introducción de 3.8 dice qué figuras son de cada fecha. |
+| E3.2 Medición A | Hecho | Ver resultados abajo; ya están en la fila «Rendimiento» de 3.8.6. |
+| E3.3 Medición B | En parte | Se midió con 1, 10 y 20 usuarios simultáneos, pero en H2. **Falta repetirla con MySQL** (no hay acceso a la base de cada integrante). 3.5.1 lo dice. |
+| Tabla de contenido | Pendiente | El `.docx` pide actualizar los campos al abrirlo: acepta el aviso de Word, o usa clic derecho → Actualizar campos → Actualizar toda la tabla. |
+
+**Resultados de la medición del 11/11/2026** (Intel Core i5-12450HX, 24 GB de RAM, perfil `dev,demo`, H2):
+
+| Prueba | Repeticiones | Mediana | p95 | Máximo |
+|---|---|---|---|---|
+| Búsqueda con filtros (`distrito=Ate&precioMaximo=20`) | 100 | 5,2 ms | 7,3 ms | 24,2 ms |
+| Búsqueda «Cerca de mí» (`lat`/`lng`) | 100 | 6,8 ms | 10,2 ms | 21,6 ms |
+| Búsqueda sin filtros | 100 | 5,4 ms | 6,6 ms | 7,9 ms |
+| Compra simulada (`POST /api/compras/lote`, Yape) | 59 | 8,3 ms | 12,9 ms | 27,2 ms |
+| 1 usuario, 15 s (búsquedas alternadas) | 3 898 | 3,7 ms | 4,6 ms | 70,1 ms |
+| 10 usuarios simultáneos, 20 s | 57 514 | 3,3 ms | 4,8 ms | 66,8 ms |
+| 20 usuarios simultáneos, 30 s | 103 885 | 5,5 ms | 8,4 ms | 75,2 ms |
+
+Sin errores en ninguna prueba. Para que la compra no agotara el stock, cada compra medida se canceló después (la cancelación no se midió).
+
 ---
 
 ## E1. Diagramas (casos de uso, clases y entidad-relación)

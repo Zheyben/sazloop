@@ -51,6 +51,8 @@ Table direcciones {
   numero varchar(20)
   referencia varchar(250)
   codigo_postal varchar(10)
+  latitud decimal(10,6) [note: 'Opcional, de -90 a 90. Usado por «Cerca de mí»']
+  longitud decimal(10,6) [note: 'Opcional, de -180 a 180. Usado por «Cerca de mí»']
 }
 
 Table establecimientos {
@@ -227,6 +229,11 @@ Table reservas {
   origen_compra varchar(20) [not null, note: 'REMOTA o PRESENCIAL_QR']
   fecha_creacion datetime [not null]
   fecha_confirmacion datetime
+  modalidad varchar(10) [note: 'RECOJO o DELIVERY; nulo = RECOJO (reservas anteriores)']
+  empresa_delivery varchar(15) [note: 'PEDIDOSYA, RAPPI o INDRIVE; solo si modalidad = DELIVERY']
+  entrega_distrito varchar(80)
+  entrega_direccion varchar(180)
+  entrega_referencia varchar(250)
 }
 
 Table detalles_reserva {
