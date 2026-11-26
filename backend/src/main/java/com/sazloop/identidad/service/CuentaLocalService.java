@@ -1,5 +1,6 @@
 package com.sazloop.identidad.service;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.*;
 import com.sazloop.identidad.dto.CuentaLocalRequest;
 import com.sazloop.identidad.repository.*;
@@ -59,7 +60,7 @@ public class CuentaLocalService {
             throw denegado();
         }
         limite.registrarExito(LimiteIntentosLogin.LOCAL, id);
-        cuenta.setUltimoAcceso(LocalDateTime.now());
+        cuenta.setUltimoAcceso(Tiempo.ahora());
         return cuenta;
     }
 

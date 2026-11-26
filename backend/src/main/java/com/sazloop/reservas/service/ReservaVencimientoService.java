@@ -1,5 +1,6 @@
 package com.sazloop.reservas.service;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.reservas.domain.CodigoRecojo;
 import com.sazloop.reservas.domain.Reserva;
 import com.sazloop.reservas.repository.ReservaRepository;
@@ -22,7 +23,7 @@ public class ReservaVencimientoService {
     @Scheduled(fixedDelay = 60000)
     @Transactional
     public void vencer() {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         for (Reserva candidata : reservas.findByEstadoAndOferta_FinRecojoLessThanEqual(
                 Reserva.EstadoReserva.CONFIRMADA, ahora)) {
             Reserva reserva = reservas.bloquear(candidata.getId()).orElseThrow();

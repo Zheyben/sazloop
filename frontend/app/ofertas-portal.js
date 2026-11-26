@@ -19,7 +19,8 @@ function horarioRecojo(o) {
   const inicio = new Date(o.inicioRecojo);
   const fin = new Date(o.finRecojo);
   const otroDia = inicio.toDateString() !== fin.toDateString();
-  return `Recojo ${fechaBreve(o.inicioRecojo)} · ${hora(o.inicioRecojo)} – ${otroDia ? `${fechaBreve(o.finRecojo)} · ` : ''}${hora(o.finRecojo)}`;
+  const diaFin = otroDia ? `${fechaBreve(o.finRecojo)} · ` : '';
+  return `Recojo ${fechaBreve(o.inicioRecojo)} · ${hora(o.inicioRecojo)} – ${diaFin}${hora(o.finRecojo)}`;
 }
 
 function horarioRecojoDestacado(o) {
@@ -39,6 +40,24 @@ function textoDistancia(km) {
 }
 
 // Pide la ubicación al navegador. Devuelve { lat, lng } o null si el usuario no acepta o falla.
+/** Distancia al local en la tarjeta de un pack (solo con el filtro «Cerca de mí» activo). */
+function lineaDistancia(o) {
+  const sinDato = o.distanciaKm == null;
+  return el('p', { className: sinDato ? 'pack-distancia sin-dato' : 'pack-distancia' },
+    sinDato ? 'Distancia no disponible' : textoDistancia(Number(o.distanciaKm)));
+}
+
+/** Sección «Dieta» del detalle de un pack; null si no hay nada que mostrar. */
+function seccionDieta(estadosDieta, otrasRestricciones) {
+  if (!estadosDieta.length && !otrasRestricciones.length) return null;
+  const otras = otrasRestricciones.length ? el('p', { textContent: otrasRestricciones.join(' · ') }) : null;
+  return el('section', { className: 'detalle-dieta' },
+    el('h3', { textContent: 'DIETA' }),
+    ...estadosDieta.map(([apto, texto]) => el('p', {},
+      el('span', { className: `detalle-estado ${apto ? 'apto' : 'no-apto'}`, ariaHidden: 'true', textContent: apto ? '✓' : '×' }), texto)),
+    otras);
+}
+
 function pedirUbicacion() {
   return new Promise(resolver => {
     if (!navigator.geolocation) return resolver(null);
@@ -146,9 +165,11 @@ export function iniciarOfertas(usuario, limite = null) {
     try {
       const ofertas = await solicitar(`/ofertas${consulta.size ? '?' + consulta : ''}`);
       if (!lista.isConnected || turno !== busquedaActual) return;
+      const visibles = limite ? ofertas.slice(0, limite) : ofertas;
+      const sinResultados = limite ? 'No tenemos productos por el momento.' : 'No hay packs con esos filtros. Prueba cambiando la búsqueda.';
       lista.replaceChildren(...(ofertas.length
-        ? (limite ? ofertas.slice(0, limite) : ofertas).map(tarjeta)
-        : [el('p', { className: 'estado-vacio', textContent: limite ? 'No tenemos productos por el momento.' : 'No hay packs con esos filtros. Prueba cambiando la búsqueda.' })]));
+        ? visibles.map(tarjeta)
+        : [el('p', { className: 'estado-vacio', textContent: sinResultados })]));
       aviso('');
     } catch (error) {
       if (!lista.isConnected || turno !== busquedaActual) return;
@@ -168,8 +189,7 @@ export function iniciarOfertas(usuario, limite = null) {
         el('span', { className: 'pack-visual-calificacion', textContent: `★  ${o.calificacion != null ? Number(o.calificacion).toFixed(1) : '-'}` })),
       el('div', { className: 'pack-contenido' },
         el('p', { className: 'pack-local' }, iconoDato('ubicacion'), `${o.establecimiento} · ${o.distrito}`),
-        mostrarDistancia ? el('p', { className: `pack-distancia${o.distanciaKm == null ? ' sin-dato' : ''}` },
-          o.distanciaKm == null ? 'Distancia no disponible' : textoDistancia(Number(o.distanciaKm))) : '',
+        mostrarDistancia ? lineaDistancia(o) : '',
         el('h3', {}, ...nombreDestacado(o.pack)),
         el('p', { className: 'pack-horario' }, iconoDato('reloj'), horarioRecojo(o)),
         el('div', { className: 'pack-posibles' },
@@ -283,11 +303,7 @@ export function iniciarOfertas(usuario, limite = null) {
             el('p', { className: 'detalle-aviso-alergenos' },
               el('span', { className: 'detalle-info-icono', ariaHidden: 'true', textContent: 'i' }),
               'Si tienes alergia o intolerancia a alguno de estos alérgenos, este pack no es para ti.')) : null,
-          estadosDieta.length || otrasRestricciones.length ? el('section', { className: 'detalle-dieta' },
-            el('h3', { textContent: 'DIETA' }),
-            ...estadosDieta.map(([apto, texto]) => el('p', {},
-              el('span', { className: `detalle-estado ${apto ? 'apto' : 'no-apto'}`, ariaHidden: 'true', textContent: apto ? '✓' : '×' }), texto)),
-            otrasRestricciones.length ? el('p', { textContent: otrasRestricciones.join(' · ') }) : null) : null,
+          seccionDieta(estadosDieta, otrasRestricciones),
           el('section', { className: 'detalle-seleccion' },
             el('h3', { textContent: 'Elige tu tamaño' }), form)),
         el('div', { className: 'detalle-pie' },

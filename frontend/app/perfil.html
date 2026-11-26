@@ -6,7 +6,7 @@
   <title>Sazloop | Mi perfil</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="portal.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.26/dist/sweetalert2.all.min.js" integrity="sha384-YSynQEAHJheMtXcWX0UbcX9moVoO5lqUapIunmQ0nJIYuYW3CdpHh4ckF/Loiasx" crossorigin="anonymous"></script>
   <script type="module" src="portal-main.js"></script>
 </head>
 <body>
@@ -17,14 +17,14 @@
       <h1>Mi <em>perfil.</em></h1>
       <p>Consulta y actualiza tus datos personales, tu foto y tu contraseña.</p>
     </section>
-    <p id="mensaje-perfil" role="status" aria-live="polite"></p>
+    <output id="mensaje-perfil" aria-live="polite"></output>
     <div class="perfil-layout">
       <aside class="perfil-identidad" aria-label="Tu foto de perfil">
         <div class="perfil-foto-marco">
           <img id="perfil-foto" alt="Tu foto de perfil" width="132" height="132" hidden>
           <span id="perfil-iniciales" class="perfil-iniciales" aria-hidden="true"></span>
         </div>
-        <h2 id="perfil-nombre-completo"></h2>
+        <h2 id="perfil-nombre-completo">Cargando tu perfil…</h2>
         <p id="perfil-correo-corto"></p>
         <button id="editar-foto" type="button" class="secundario">Subir o cambiar foto</button>
         <form id="form-foto" hidden>

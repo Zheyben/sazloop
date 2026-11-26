@@ -93,7 +93,7 @@
 .cifra small { color: var(--secundario); font-size: .78rem; }
 .ubicacion-registro { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; padding: .85rem 1rem; border: 1px dashed #c9d9a9; border-radius: 1rem; background: #f6faee; }
 .ubicacion-registro button { margin: 0; white-space: nowrap; }
-.ubicacion-estado { font-size: .85rem; color: var(--secundario); }
+.ubicacion-estado { display: inline; margin: 0; font-size: .85rem; color: var(--secundario); }
 .ubicacion-estado.lista { color: #2f5d2b; font-weight: 750; }
 .ubicacion-estado.lista::before { content: '✓ '; }
 .ubicacion-estado.error { color: #9a2f23; font-weight: 650; }

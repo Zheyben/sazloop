@@ -1,5 +1,6 @@
 package com.sazloop.experiencia.service;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.experiencia.domain.Notificacion;
 import com.sazloop.experiencia.repository.NotificacionRepository;
 import com.sazloop.identidad.domain.Usuario;
@@ -39,7 +40,7 @@ public class NotificacionService {
     /** Marca como leídos los avisos de un tipo ligados a un registro (p. ej. el recordatorio de un pedido). */
     @Transactional
     public void leerPorReferencia(Long usuarioId, Notificacion.TipoNotificacion tipo, String referencia, Long referenciaId) {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         avisos.findByDestinatario_IdAndTipoAndTipoReferenciaAndReferenciaId(usuarioId, tipo, referencia, referenciaId)
                 .stream().filter(a -> !a.isLeida()).forEach(a -> {
                     a.setLeida(true);
@@ -56,7 +57,7 @@ public class NotificacionService {
 
     @Transactional
     public void leerTodas(Long usuarioId) {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         avisos.findByDestinatario_IdOrderByIdDesc(usuarioId).stream().filter(a -> !a.isLeida()).forEach(a -> {
             a.setLeida(true);
             a.setFechaLectura(ahora);
@@ -71,7 +72,7 @@ public class NotificacionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         if (!aviso.isLeida()) {
             aviso.setLeida(true);
-            aviso.setFechaLectura(LocalDateTime.now());
+            aviso.setFechaLectura(Tiempo.ahora());
         }
     }
 

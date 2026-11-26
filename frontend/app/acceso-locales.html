@@ -6,7 +6,7 @@
   <title>Sazloop | Ingreso de locales</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="accesos.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.26/dist/sweetalert2.all.min.js" integrity="sha384-YSynQEAHJheMtXcWX0UbcX9moVoO5lqUapIunmQ0nJIYuYW3CdpHh4ckF/Loiasx" crossorigin="anonymous"></script>
   <script type="module" src="accesos.js"></script>
 </head>
 <body data-acceso="locales">
@@ -20,17 +20,17 @@
       </div>
       <div class="selector-acceso">
         <p class="etiqueta">ESPACIO DE LOCALES</p>
-        <div class="selector-rol" role="group" aria-label="Tipo de acceso">
+        <fieldset class="selector-rol" aria-label="Tipo de acceso">
           <button type="button" data-rol="trabajador" aria-pressed="true">Trabajador</button>
           <button type="button" data-rol="empresa" aria-pressed="false">Empresa</button>
-        </div>
+        </fieldset>
       </div>
       <span class="historia-marca" aria-hidden="true">✳</span>
     </section>
     <section class="panel-formulario" aria-labelledby="titulo-formulario">
       <div class="formulario-contenido">
         <h2 id="titulo-formulario">Ingresar como trabajador</h2>
-        <p id="mensaje-acceso" role="status" aria-live="polite"></p>
+        <output id="mensaje-acceso" aria-live="polite"></output>
         <form id="ingreso-trabajador" class="formulario-acceso">
           <label>Usuario del local <input name="nombreUsuario" autocomplete="username" maxlength="80" required></label>
           <label>Contraseña <input name="contrasena" type="password" autocomplete="current-password" required></label>

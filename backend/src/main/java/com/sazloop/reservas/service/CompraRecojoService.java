@@ -1,5 +1,6 @@
 package com.sazloop.reservas.service;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.experiencia.repository.ResenaRepository;
 import com.sazloop.experiencia.service.ImpactoService;
 import com.sazloop.identidad.domain.*;
@@ -60,7 +61,7 @@ public class CompraRecojoService {
         validarEntrega(entrada);
         OfertaPack oferta = ofertas.bloquear(entrada.ofertaId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         if (oferta.getEstado() != OfertaPack.EstadoOferta.ACTIVA ||
                 oferta.getPackSorpresa().getEstablecimiento().getEstado()
                         != Establecimiento.EstadoEstablecimiento.ACTIVO ||
@@ -157,7 +158,7 @@ public class CompraRecojoService {
     @Transactional
     public CompraResponse recoger(CuentaEstablecimiento cuenta, String codigo) {
         Reserva reserva = reservaDelLocal(cuenta, codigo, true);
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         OfertaPack oferta = reserva.getOferta();
         if (reserva.getEstado() != Reserva.EstadoReserva.CONFIRMADA ||
                 reserva.getCodigoRecojo().getEstado() != CodigoRecojo.EstadoCodigo.PENDIENTE)
@@ -206,7 +207,7 @@ public class CompraRecojoService {
                         && !resenas.existsByConsumidor_IdAndEstablecimiento_Id(
                                 reserva.getConsumidor().getId(),
                                 reserva.getOferta().getPackSorpresa().getEstablecimiento().getId()),
-                CancelacionService.puedeCancelar(reserva, LocalDateTime.now()),
+                CancelacionService.puedeCancelar(reserva, Tiempo.ahora()),
                 reserva.getCancelacion() == null ? null : reserva.getCancelacion().getImporteReembolso(),
                 cliente(reserva.getConsumidor().getUsuario()),
                 reserva.getDetalles().stream().map(detalle -> new CompraResponse.Linea(

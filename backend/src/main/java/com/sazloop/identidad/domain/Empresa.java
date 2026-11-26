@@ -1,5 +1,6 @@
 package com.sazloop.identidad.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -45,6 +46,6 @@ public class Empresa {
 
     @Builder.Default
     @Column(name = "fecha_registro", nullable = false, updatable = false)
-    private LocalDateTime fechaRegistro = LocalDateTime.now();
+    private LocalDateTime fechaRegistro = Tiempo.ahora();
 }
 

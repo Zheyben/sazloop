@@ -7,6 +7,7 @@ package com.sazloop;
 
 // SpringApplication: la clase que pone en marcha el contexto
 // de Spring (el "contenedor" que gestiona todos los objetos)
+import com.sazloop.shared.Tiempo;
 import org.springframework.boot.SpringApplication;
 
 // @SpringBootApplication: la anotación que activa tres cosas
@@ -41,8 +42,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class SazloopApplication {
 
     /** Todo el sistema trabaja con la hora de Perú, sin importar la zona de la computadora donde corra. */
-    public static final String ZONA = "America/Lima";
-    static { java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(ZONA)); }
+    public static final String ZONA = Tiempo.ID_ZONA;
+    static { java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(Tiempo.ZONA)); }
 
     // =========================================================
     // MÉTODO MAIN

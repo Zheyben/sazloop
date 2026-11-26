@@ -20,8 +20,10 @@ function vistaRegistro(registro) {
   registroPersonal.hidden = !registro || rol === 'trabajador';
   document.querySelector('#ir-registro').hidden = registro || rol === 'trabajador';
   document.querySelector('#ir-ingreso').hidden = !registro || rol === 'trabajador';
-  document.querySelector('#titulo-formulario').textContent =
-    registro ? 'Crear cuenta' : rol === 'empresa' ? 'Ingresar como empresa' : 'Iniciar sesión';
+  let titulo = 'Iniciar sesión';
+  if (registro) titulo = 'Crear cuenta';
+  else if (rol === 'empresa') titulo = 'Ingresar como empresa';
+  document.querySelector('#titulo-formulario').textContent = titulo;
 }
 
 function cambiarRol(nuevoRol) {
@@ -49,6 +51,55 @@ function cambiarRol(nuevoRol) {
   aviso('');
 }
 
+/** Convierte una respuesta HTTP con error en un Error con el mensaje que se mostrará. */
+async function errorDeRespuesta(respuesta) {
+  const textos = {
+    400: 'Revisa los datos ingresados.',
+    401: 'Revisa tus credenciales e intenta de nuevo.',
+    409: 'La cuenta ya existe o no se puede completar la operación.'
+  };
+  // 429: el servidor bloqueó la cuenta por demasiados intentos fallidos y manda el mensaje a mostrar.
+  let motivo = '';
+  if (respuesta.status === 429) {
+    try { motivo = (await respuesta.json())?.message || ''; } catch { /* respuesta sin cuerpo JSON */ }
+    motivo = motivo || 'Demasiados intentos fallidos. Espera 5 minutos e inténtalo de nuevo.';
+  }
+  const error = new Error(motivo || textos[respuesta.status] || 'No se pudo completar la operación.');
+  error.status = respuesta.status;
+  return error;
+}
+
+/** Alerta según el tipo de fallo: sin conexión, credenciales, cuenta repetida u otro error. */
+function notificarFallo(error, ruta) {
+  if (esFalloDeRed(error)) {
+    notificar({
+      icon: 'error',
+      title: 'Sin conexión',
+      text: 'Parece que no tienes internet. Revisa tu conexión y vuelve a intentarlo.'
+    });
+  } else if (ruta.endsWith('/sesion')) {
+    notificar({
+      icon: 'error',
+      title: 'No pudimos iniciar sesión',
+      text: error.status === 401
+        ? 'El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.'
+        : error.message
+    });
+  } else if (error.status === 409) {
+    notificar({
+      icon: 'warning',
+      title: 'Esta cuenta ya existe',
+      text: 'Ese correo ya está registrado. Inicia sesión o usa otro correo.'
+    });
+  } else {
+    notificar({
+      icon: error.status === 400 ? 'warning' : 'error',
+      title: 'No se pudo crear la cuenta',
+      text: error.message
+    });
+  }
+}
+
 async function enviar(formulario, ruta, destino) {
   const boton = formulario.querySelector('button[type="submit"]');
   boton.disabled = true;
@@ -60,22 +111,7 @@ async function enviar(formulario, ruta, destino) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.fromEntries(new FormData(formulario)))
     });
-    if (!respuesta.ok) {
-      const textos = {
-        400: 'Revisa los datos ingresados.',
-        401: 'Revisa tus credenciales e intenta de nuevo.',
-        409: 'La cuenta ya existe o no se puede completar la operación.'
-      };
-      // 429: el servidor bloqueó la cuenta por demasiados intentos fallidos y manda el mensaje a mostrar.
-      let motivo = '';
-      if (respuesta.status === 429) {
-        try { motivo = (await respuesta.json())?.message || ''; } catch { /* respuesta sin cuerpo JSON */ }
-        motivo = motivo || 'Demasiados intentos fallidos. Espera 5 minutos e inténtalo de nuevo.';
-      }
-      const error = new Error(motivo || textos[respuesta.status] || 'No se pudo completar la operación.');
-      error.status = respuesta.status;
-      throw error;
-    }
+    if (!respuesta.ok) throw await errorDeRespuesta(respuesta);
     if (destino) {
       location.href = destino;
     } else {
@@ -88,34 +124,7 @@ async function enviar(formulario, ruta, destino) {
     }
   } catch (error) {
     aviso(esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message, true);
-    const esSesion = ruta.endsWith('/sesion');
-    if (esFalloDeRed(error)) {
-      notificar({
-        icon: 'error',
-        title: 'Sin conexión',
-        text: 'Parece que no tienes internet. Revisa tu conexión y vuelve a intentarlo.'
-      });
-    } else if (esSesion) {
-      notificar({
-        icon: 'error',
-        title: 'No pudimos iniciar sesión',
-        text: error.status === 401
-          ? 'El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.'
-          : error.message
-      });
-    } else if (error.status === 409) {
-      notificar({
-        icon: 'warning',
-        title: 'Esta cuenta ya existe',
-        text: 'Ese correo ya está registrado. Inicia sesión o usa otro correo.'
-      });
-    } else {
-      notificar({
-        icon: error.status === 400 ? 'warning' : 'error',
-        title: 'No se pudo crear la cuenta',
-        text: error.message
-      });
-    }
+    notificarFallo(error, ruta);
   }
   finally { boton.disabled = false; }
 }

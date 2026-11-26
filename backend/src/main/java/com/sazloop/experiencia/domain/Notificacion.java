@@ -1,5 +1,6 @@
 package com.sazloop.experiencia.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.Usuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -42,7 +43,7 @@ public class Notificacion {
 
     @Builder.Default
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = Tiempo.ahora();
 
     @Builder.Default @Column(nullable = false)
     private boolean leida = false;

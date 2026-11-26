@@ -1,5 +1,6 @@
 package com.sazloop.ofertas.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.Establecimiento;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -62,6 +63,6 @@ public class PackSorpresa {
 
     @Builder.Default
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = Tiempo.ahora();
 }
 

@@ -1,5 +1,6 @@
 package com.sazloop.ofertas.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -56,7 +57,7 @@ public class OfertaPack {
 
     @Builder.Default
     @Column(name = "fecha_publicacion", nullable = false, updatable = false)
-    private LocalDateTime fechaPublicacion = LocalDateTime.now();
+    private LocalDateTime fechaPublicacion = Tiempo.ahora();
 
     public enum EstadoOferta {
         BORRADOR, ACTIVA, AGOTADA, FINALIZADA, CANCELADA

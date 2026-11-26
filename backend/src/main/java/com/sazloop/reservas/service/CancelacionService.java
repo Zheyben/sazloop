@@ -1,5 +1,6 @@
 package com.sazloop.reservas.service;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.Establecimiento;
 import com.sazloop.ofertas.domain.OfertaPack;
 import com.sazloop.ofertas.repository.OfertaPackRepository;
@@ -37,12 +38,12 @@ public class CancelacionService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!reserva.getConsumidor().getUsuario().getId().equals(usuarioId))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        if (!puedeCancelar(reserva, LocalDateTime.now()))
+        if (!puedeCancelar(reserva, Tiempo.ahora()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Esta compra ya no puede cancelarse");
 
         OfertaPack oferta = ofertas.bloquear(reserva.getOferta().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         if (!puedeCancelar(reserva, ahora))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Se alcanzó el límite de cancelación");
         boolean devolverStock = oferta.getEstado() == OfertaPack.EstadoOferta.ACTIVA

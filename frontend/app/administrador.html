@@ -6,7 +6,7 @@
   <title>Sazloop | Administración</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="panel.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.26/dist/sweetalert2.all.min.js" integrity="sha384-YSynQEAHJheMtXcWX0UbcX9moVoO5lqUapIunmQ0nJIYuYW3CdpHh4ckF/Loiasx" crossorigin="anonymous"></script>
   <script type="module" src="administrador.js"></script>
 </head>
 <body class="panel-app tema-gris">
@@ -29,7 +29,7 @@
     </nav>
 
     <main class="panel-contenido">
-      <p id="mensaje" role="status" aria-live="polite"></p>
+      <output id="mensaje" aria-live="polite"></output>
 
       <section data-panel-vista="solicitudes" aria-labelledby="titulo-solicitudes">
         <div class="vista-encabezado">

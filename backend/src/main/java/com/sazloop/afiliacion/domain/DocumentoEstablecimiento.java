@@ -1,5 +1,6 @@
 package com.sazloop.afiliacion.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -41,7 +42,7 @@ public class DocumentoEstablecimiento {
 
     @Builder.Default
     @Column(name = "fecha_carga", nullable = false, updatable = false)
-    private LocalDateTime fechaCarga = LocalDateTime.now();
+    private LocalDateTime fechaCarga = Tiempo.ahora();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "solicitud_id", nullable = false)

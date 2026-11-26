@@ -231,7 +231,7 @@ async function mostrarCarrito() {
   }
   medio.addEventListener('change', resetPago);
   siguiente.addEventListener('click', () => {
-    if (!/^9[0-9]{8}$/.test(telefono.value.trim())) {
+    if (!/^9\d{8}$/.test(telefono.value.trim())) {
       avisoPago('Ingresa un número peruano de nueve dígitos que empiece por 9.', true);
       return;
     }
@@ -241,7 +241,7 @@ async function mostrarCarrito() {
     mensajePago.textContent = '';
   });
   validarYape.addEventListener('click', () => {
-    if (!/^[0-9]{6}$/.test(codigo.value.trim())) {
+    if (!/^\d{6}$/.test(codigo.value.trim())) {
       avisoPago('Ingresa los seis dígitos del código.', true);
       return;
     }
@@ -256,9 +256,9 @@ async function mostrarCarrito() {
   });
   validarTarjeta.addEventListener('click', () => {
     const digitos = numero.value.replace(/\s/g, '');
-    if (!/^[0-9]{13,19}$/.test(digitos) || !titular.value.trim()
+    if (!/^\d{13,19}$/.test(digitos) || !titular.value.trim()
         || !tarjetaVigente(vencimiento.value)
-        || !/^[0-9]{3,4}$/.test(cvv.value)) {
+        || !/^\d{3,4}$/.test(cvv.value)) {
       avisoPago('Revisa el número, titular, vencimiento y CVV o CVC.', true);
       return;
     }
@@ -276,33 +276,16 @@ async function mostrarCarrito() {
     const vendidos = new Map();
     let suma = 0;
     for (const { pedido, oferta, campos, subtotal } of entradas) {
-      let parcial = 0;
-      for (const { variante, input } of campos) {
-        const unidades = Number(input.value);
-        if (Number.isFinite(unidades) && unidades > 0) parcial += unidades * Number(variante.precioDescuento);
-        input.closest('.detalle-variante')?.classList.toggle('seleccionada', unidades > 0);
+      subtotal.textContent = dinero(subtotalPedido(campos));
+      const leidas = leerLineas(oferta, campos, vendidos);
+      if (!leidas) {
+        mensaje.textContent = 'Revisa las cantidades de los pedidos.';
+        return null;
       }
-      subtotal.textContent = dinero(parcial);
-      const lineas = [];
-      for (const { variante, input } of campos) {
-        const cantidad = Number(input.value);
-        if (!Number.isInteger(cantidad) || cantidad < 0 || cantidad > variante.stockDisponible) {
-          mensaje.textContent = 'Revisa las cantidades de los pedidos.';
-          return null;
-        }
-        if (cantidad) {
-          const clave = `${oferta.id}-${variante.id}`;
-          vendidos.set(clave, (vendidos.get(clave) || 0) + cantidad);
-          lineas.push({ varianteId: variante.id, cantidad });
-          suma += cantidad * Number(variante.precioDescuento);
-        }
-      }
-      if (lineas.length) guardados.push({ ...pedido, lineas });
+      suma += leidas.suma;
+      if (leidas.lineas.length) guardados.push({ ...pedido, lineas: leidas.lineas });
     }
-    if ([...vendidos].some(([clave, cantidad]) => {
-      const [ofertaId, varianteId] = clave.split('-').map(Number);
-      return cantidad > ofertas.get(ofertaId).variantes.find(v => v.id === varianteId).stockDisponible;
-    })) {
+    if (superaStock(vendidos, ofertas)) {
       mensaje.textContent = 'La suma de los pedidos supera el stock disponible.';
       return null;
     }
@@ -403,8 +386,7 @@ async function mostrarHistorial() {
         esDelivery(c) ? el('p', { className: 'compra-delivery' }, el('strong', { textContent: 'Delivery · ' }), textoDelivery(c))
           : el('p', { className: 'compra-modalidad', textContent: 'Recojo en el local' }),
         c.estado === 'CANCELADA' ? null : el('p', { className: 'codigo', textContent: c.codigoRecojo }),
-        c.numeroBoleta ? el('p', { textContent: `Boleta ${c.numeroBoleta}` })
-          : c.estado === 'PENDIENTE_PAGO' ? el('p', { textContent: 'Boleta disponible al confirmar el efectivo.' }) : null,
+        lineaBoleta(c),
         el('p', { className: 'chico', textContent: horarioCompra(c) }),
         c.estado === 'CANCELADA' ? el('p', { textContent: `Reembolso: ${dinero(c.importeReembolso)}` }) : null,
         c.cancelable ? el('button', { type: 'button', textContent: 'Cancelar compra',
@@ -414,6 +396,48 @@ async function mostrarHistorial() {
       : [el('div', { className: 'estado-vacio', textContent: 'Aún no tienes compras realizadas.' })]));
     aviso('');
   } catch (error) { if (lista.isConnected) aviso(error.message, true, 'No se pudieron cargar tus compras'); }
+}
+
+/** Subtotal de un pedido; de paso marca como seleccionadas las variantes que tienen unidades. */
+function subtotalPedido(campos) {
+  let parcial = 0;
+  for (const { variante, input } of campos) {
+    const unidades = Number(input.value);
+    if (Number.isFinite(unidades) && unidades > 0) parcial += unidades * Number(variante.precioDescuento);
+    input.closest('.detalle-variante')?.classList.toggle('seleccionada', unidades > 0);
+  }
+  return parcial;
+}
+
+/** Líneas con unidades de un pedido y su suma; null si alguna cantidad no es válida. */
+function leerLineas(oferta, campos, vendidos) {
+  const lineas = [];
+  let suma = 0;
+  for (const { variante, input } of campos) {
+    const cantidad = Number(input.value);
+    if (!Number.isInteger(cantidad) || cantidad < 0 || cantidad > variante.stockDisponible) return null;
+    if (!cantidad) continue;
+    const clave = `${oferta.id}-${variante.id}`;
+    vendidos.set(clave, (vendidos.get(clave) || 0) + cantidad);
+    lineas.push({ varianteId: variante.id, cantidad });
+    suma += cantidad * Number(variante.precioDescuento);
+  }
+  return { lineas, suma };
+}
+
+/** True si, sumando todos los pedidos, alguna variante pide más unidades que su stock. */
+function superaStock(vendidos, ofertas) {
+  return [...vendidos].some(([clave, cantidad]) => {
+    const [ofertaId, varianteId] = clave.split('-').map(Number);
+    return cantidad > ofertas.get(ofertaId).variantes.find(v => v.id === varianteId).stockDisponible;
+  });
+}
+
+/** Línea de boleta de una compra del historial. */
+function lineaBoleta(compra) {
+  if (compra.numeroBoleta) return el('p', { textContent: `Boleta ${compra.numeroBoleta}` });
+  if (compra.estado === 'PENDIENTE_PAGO') return el('p', { textContent: 'Boleta disponible al confirmar el efectivo.' });
+  return null;
 }
 
 /** Contador +/− de una variante dentro de un pedido del carrito. */

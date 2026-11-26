@@ -41,7 +41,9 @@ function claveCarrito(usuarioId) { return `sazloop-carrito-${usuarioId}`; }
 export function leerCarrito(usuarioId) {
   try {
     const dato = JSON.parse(sessionStorage.getItem(claveCarrito(usuarioId)) || 'null');
-    const pedidos = Array.isArray(dato) ? dato : dato?.lineas ? [dato] : [];
+    let pedidos = [];
+    if (Array.isArray(dato)) pedidos = dato;
+    else if (dato?.lineas) pedidos = [dato];
     return pedidos.map((pedido, indice) => ({
       clave: typeof pedido.clave === 'string' ? pedido.clave : `anterior-${indice}`,
       ofertaId: pedido.ofertaId,

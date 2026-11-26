@@ -212,11 +212,26 @@ async function cargarLocales() {
     insigniaLocal(local.estado),
     el('h3', { textContent: local.nombre }),
     el('p', { textContent: `${local.direccion}, ${local.distrito}` }),
-    el('p', { textContent: local.estado === 'PENDIENTE_APROBACION' ? 'Presenta sus documentos para que Sazloop lo apruebe.'
-      : local.cuentaTrabajador ? `Cuenta del trabajador: ${local.cuentaTrabajador}` : 'Aún no tiene cuenta de trabajador.' }),
+    el('p', { textContent: textoCuentaLocal(local) }),
     el('div', { className: 'pie-item' },
       el('span', { className: 'nota', textContent: 'Documentos y cuenta' }),
       el('button', { type: 'button', textContent: 'Gestionar', onclick: () => mostrar('locales:detalle', local.id) })))));
+}
+
+/** Qué falta hacer en un local: documentos, cuenta del trabajador o nada. */
+function textoCuentaLocal(local) {
+  if (local.estado === 'PENDIENTE_APROBACION') return 'Presenta sus documentos para que Sazloop lo apruebe.';
+  if (local.cuentaTrabajador) return `Cuenta del trabajador: ${local.cuentaTrabajador}`;
+  return 'Aún no tiene cuenta de trabajador.';
+}
+
+/** Banda de aviso de un local suspendido por documentos vencidos. */
+function bandaSuspension(doc) {
+  const desde = doc.suspendidoDesde ? ` Suspendido desde el ${fecha(doc.suspendidoDesde)}.` : '';
+  return banda('peligro', 'Local suspendido',
+    `${conPunto(doc.motivoSuspension || 'Un documento obligatorio venció.')}${desde} `
+    + 'No aparece en la búsqueda ni puede publicar packs; el trabajador sí puede entregar las reservas ya pagadas. '
+    + 'Presenta la renovación de los documentos vencidos para reactivarlo.');
 }
 
 // Ubicación del local para «Cerca de mí»: se ve si está registrada y se puede actualizar con el GPS.
@@ -260,10 +275,7 @@ async function abrirLocal(id, aviso = '', titulo) {
         el('h2', { textContent: local.nombre }),
         el('p', { textContent: `${local.direccion}, ${local.distrito}` })),
       insigniaLocal(local.estado)),
-    local.estado === 'SUSPENDIDO' ? banda('peligro', 'Local suspendido',
-      `${conPunto(doc.motivoSuspension || 'Un documento obligatorio venció.')}${doc.suspendidoDesde ? ` Suspendido desde el ${fecha(doc.suspendidoDesde)}.` : ''} `
-      + 'No aparece en la búsqueda ni puede publicar packs; el trabajador sí puede entregar las reservas ya pagadas. '
-      + 'Presenta la renovación de los documentos vencidos para reactivarlo.') : '',
+    local.estado === 'SUSPENDIDO' ? bandaSuspension(doc) : '',
     seccionUbicacion(local),
     el('section', { className: 'tarjeta-panel' },
       el('h3', { textContent: aprobado ? 'Documentos del local' : 'Solicitud de afiliación' }),

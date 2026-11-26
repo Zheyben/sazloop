@@ -6,12 +6,9 @@
   <title>Sazloop | Inicio</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="portal.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.26/dist/sweetalert2.all.min.js" integrity="sha384-YSynQEAHJheMtXcWX0UbcX9moVoO5lqUapIunmQ0nJIYuYW3CdpHh4ckF/Loiasx" crossorigin="anonymous"></script>
   <script type="module" src="portal-main.js"></script>
-  <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 </head>
 <body>
 <!-- 1. El menú superior baja suavemente apenas carga la página -->
@@ -35,7 +32,7 @@
       <div><p class="etiqueta">PACKS SORPRESA</p><h2 id="titulo-packs">Novedades</h2></div>
       <a id="ver-todas" class="enlace-ver-todas" href="catalogo.html">Ver todas</a>
     </div>
-    <p id="mensaje" role="status" aria-live="polite"></p>
+    <output id="mensaje" aria-live="polite"></output>
 
     <!-- El contenedor donde el JS inyectará las tarjetas de comida -->
     <div id="lista" class="grid-packs" aria-label="Packs disponibles"></div>

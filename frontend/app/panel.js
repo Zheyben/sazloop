@@ -55,7 +55,9 @@ export function mensaje(texto, esError = false, titulo) {
   const zona = document.querySelector('#mensaje');
   if (zona) {
     zona.textContent = esFalloDeRed(texto) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : texto;
-    zona.className = texto ? (esError ? 'error' : 'ok') : '';
+    let clase = '';
+    if (texto) clase = esError ? 'error' : 'ok';
+    zona.className = clase;
   }
   if (!texto) return;
   if (esError) notificarError(texto, titulo);
@@ -111,8 +113,12 @@ export function tabla(columnas, filas, pie = null) {
     el('table', { className: 'tabla-panel' }, el('thead', {}, encabezado), el('tbody', {}, ...cuerpo), piePagina));
 }
 
-export const fecha = s => s ? new Date(s + (s.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('es-PE',
-  { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+export const fecha = s => {
+  if (!s) return '—';
+  // Una fecha sin hora («AAAA-MM-DD») se interpreta como local, no como UTC.
+  const instante = s.length === 10 ? `${s}T00:00:00` : s;
+  return new Date(instante).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+};
 export const hora = s => new Date(s).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
 
 export function rangoHorario(inicio, fin) {

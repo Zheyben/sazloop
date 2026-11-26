@@ -1,5 +1,7 @@
 package com.sazloop.ofertas.service;
 
+import com.sazloop.shared.Tiempo;
+import com.sazloop.experiencia.domain.Resena;
 import com.sazloop.experiencia.repository.ResenaRepository;
 import com.sazloop.identidad.domain.CuentaEstablecimiento;
 import com.sazloop.identidad.domain.Establecimiento;
@@ -86,7 +88,7 @@ public class OfertaService {
         PackSorpresa pack = packs.findById(entrada.packId())
                 .filter(p -> p.isActivo() && p.getEstablecimiento().getId().equals(localId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pack no encontrado"));
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         // Se tolera un inicio "ahora" (hasta 5 minutos atrás por el reloj del navegador).
         if (entrada.inicioRecojo().isBefore(ahora.minusMinutes(5)) ||
                 !entrada.finRecojo().isAfter(entrada.inicioRecojo()))
@@ -117,7 +119,7 @@ public class OfertaService {
     public Optional<OfertaResponse> vigente(CuentaEstablecimiento cuenta) {
         return ofertas.findByPackSorpresa_Establecimiento_IdAndEstado(
                         cuenta.getEstablecimiento().getId(), OfertaPack.EstadoOferta.ACTIVA).stream()
-                .filter(oferta -> oferta.getFinRecojo().isAfter(LocalDateTime.now()))
+                .filter(oferta -> oferta.getFinRecojo().isAfter(Tiempo.ahora()))
                 .findFirst().map(this::respuesta);
     }
 
@@ -143,7 +145,7 @@ public class OfertaService {
                 || lat < -90 || lat > 90 || lng < -180 || lng > 180))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ubicación inválida");
         List<OfertaPack> encontradas = busqueda.buscar(distrito, direccion, precioMaximo,
-                calificacionMinima, LocalDateTime.now());
+                calificacionMinima, Tiempo.ahora());
         var calificaciones = busqueda.calificaciones(encontradas.stream()
                 .map(o -> o.getPackSorpresa().getEstablecimiento().getId()).distinct().toList());
         List<OfertaResponse> salida = new ArrayList<>();
@@ -178,7 +180,7 @@ public class OfertaService {
     public OfertaResponse consultar(Long id) {
         OfertaPack oferta = ofertas.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (oferta.getEstado() != OfertaPack.EstadoOferta.ACTIVA ||
-                !oferta.getFinRecojo().isAfter(LocalDateTime.now()) ||
+                !oferta.getFinRecojo().isAfter(Tiempo.ahora()) ||
                 oferta.getPackSorpresa().getEstablecimiento().getEstado()
                         != Establecimiento.EstadoEstablecimiento.ACTIVO)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -189,7 +191,7 @@ public class OfertaService {
     private OfertaResponse respuesta(OfertaPack oferta) {
         var calificaciones = resenas.findByEstablecimiento_IdAndVisibleTrue(oferta.getPackSorpresa().getEstablecimiento().getId());
         Double promedio = calificaciones.isEmpty() ? null : calificaciones.stream()
-                .mapToInt(r -> r.getCalificacion()).average().orElseThrow();
+                .mapToInt(Resena::getCalificacion).average().orElseThrow();
         return respuesta(oferta, promedio, null);
     }
 

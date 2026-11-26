@@ -1,5 +1,6 @@
 package com.sazloop.afiliacion.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -31,7 +32,7 @@ public class RevisionDocumento {
 
     @Builder.Default
     @Column(name = "fecha_revision", nullable = false, updatable = false)
-    private LocalDateTime fechaRevision = LocalDateTime.now();
+    private LocalDateTime fechaRevision = Tiempo.ahora();
 
     public enum ResultadoRevision { APROBADO, RECHAZADO }
 }

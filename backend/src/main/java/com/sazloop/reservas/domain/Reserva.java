@@ -1,5 +1,6 @@
 package com.sazloop.reservas.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.experiencia.domain.Resena;
 import com.sazloop.identidad.domain.Consumidor;
 import com.sazloop.ofertas.domain.OfertaPack;
@@ -50,7 +51,7 @@ public class Reserva {
 
     @Builder.Default
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = Tiempo.ahora();
 
     @Column(name = "fecha_confirmacion")
     private LocalDateTime fechaConfirmacion;

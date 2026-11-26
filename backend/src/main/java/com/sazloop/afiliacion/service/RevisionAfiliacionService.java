@@ -15,11 +15,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /** Revisión humana de cada archivo y resolución de la solicitud o renovación (RF-07, RF-08 y RF-09). */
 @Service
 public class RevisionAfiliacionService {
+    private static final String MOTIVO = "Motivo: ";
     private final SolicitudAfiliacionRepository solicitudes;
     private final DocumentoEstablecimientoRepository documentos;
     private final RevisionDocumentoRepository revisiones;
@@ -117,36 +122,55 @@ public class RevisionAfiliacionService {
         SolicitudAfiliacion solicitud = solicitud(id);
         exigirEnRevision(solicitud);
         List<DocumentoEstablecimiento> lista = documentos.findBySolicitudAfiliacion_IdOrderByIdAsc(id);
-        java.util.Map<Long, ResolucionRequest.Documento> porId = new java.util.HashMap<>();
+        Map<Long, ResolucionRequest.Documento> porId = new HashMap<>();
         for (ResolucionRequest.Documento item : entrada.documentos()) porId.put(item.id(), item);
         // Resultado y observación finales de cada documento: se conserva la revisión previa si ya existe.
-        java.util.Map<Long, ResultadoRevision> resultados = new java.util.HashMap<>();
-        java.util.Map<Long, String> observaciones = new java.util.HashMap<>();
+        Map<Long, ResultadoRevision> resultados = new HashMap<>();
+        Map<Long, String> observaciones = new HashMap<>();
         for (DocumentoEstablecimiento doc : lista) {
-            RevisionDocumento previa = revisiones.findFirstByDocumento_IdOrderByIdDesc(doc.getId()).orElse(null);
-            if (previa != null) {
-                resultados.put(doc.getId(), previa.getResultado());
-                observaciones.put(doc.getId(), previa.getObservaciones() == null ? "" : previa.getObservaciones());
-                continue;
-            }
-            ResolucionRequest.Documento item = porId.get(doc.getId());
-            if (item == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Indica el resultado de cada documento: aprobar o rechazar");
-            revisar(admin, doc.getId(), new RevisionRequest(item.resultado(), item.observaciones()));
-            resultados.put(doc.getId(), item.resultado());
-            observaciones.put(doc.getId(), item.observaciones() == null ? "" : item.observaciones());
+            registrarResultado(admin, doc, porId.get(doc.getId()), resultados, observaciones);
         }
         boolean todoAprobado = !lista.isEmpty() && lista.stream()
                 .allMatch(d -> resultados.get(d.getId()) == ResultadoRevision.APROBADO);
         DecisionAfiliacion decision = todoAprobado ? DecisionAfiliacion.APROBADA : DecisionAfiliacion.RECHAZADA;
-        String motivo = entrada.comentario() != null && !entrada.comentario().isBlank() ? entrada.comentario().trim()
-                : todoAprobado ? "Documentación revisada y conforme"
-                : lista.stream().filter(d -> resultados.get(d.getId()) == ResultadoRevision.RECHAZADO)
-                        .map(d -> d.getTipoDocumento().etiqueta() + ": " + observaciones.get(d.getId()).trim())
-                        .collect(java.util.stream.Collectors.joining("; "));
+        String motivo = motivoResolucion(entrada.comentario(), todoAprobado, lista, resultados, observaciones);
+        return decidir(admin, id, new DecisionRequest(decision, motivo));
+    }
+
+    /** Anota el resultado de un documento: reutiliza la revisión previa o registra la que llegó en la petición. */
+    private void registrarResultado(AdministradorPlataforma admin, DocumentoEstablecimiento doc,
+            ResolucionRequest.Documento item, Map<Long, ResultadoRevision> resultados,
+            Map<Long, String> observaciones) {
+        RevisionDocumento previa = revisiones.findFirstByDocumento_IdOrderByIdDesc(doc.getId()).orElse(null);
+        if (previa != null) {
+            resultados.put(doc.getId(), previa.getResultado());
+            observaciones.put(doc.getId(), Objects.toString(previa.getObservaciones(), ""));
+            return;
+        }
+        if (item == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Indica el resultado de cada documento: aprobar o rechazar");
+        revisar(admin, doc.getId(), new RevisionRequest(item.resultado(), item.observaciones()));
+        resultados.put(doc.getId(), item.resultado());
+        observaciones.put(doc.getId(), Objects.toString(item.observaciones(), ""));
+    }
+
+    /** Motivo de la decisión: el comentario del administrador o, si no hay, uno armado con las revisiones. */
+    private static String motivoResolucion(String comentario, boolean todoAprobado,
+            List<DocumentoEstablecimiento> lista, Map<Long, ResultadoRevision> resultados,
+            Map<Long, String> observaciones) {
+        String motivo;
+        if (comentario != null && !comentario.isBlank()) {
+            motivo = comentario.trim();
+        } else if (todoAprobado) {
+            motivo = "Documentación revisada y conforme";
+        } else {
+            motivo = lista.stream().filter(d -> resultados.get(d.getId()) == ResultadoRevision.RECHAZADO)
+                    .map(d -> d.getTipoDocumento().etiqueta() + ": " + observaciones.get(d.getId()).trim())
+                    .collect(Collectors.joining("; "));
+        }
         if (motivo.isBlank()) motivo = "Solicitud rechazada tras la revisión de los documentos";
         if (motivo.length() > 500) motivo = motivo.substring(0, 499) + "…";
-        return decidir(admin, id, new DecisionRequest(decision, motivo));
+        return motivo;
     }
 
     @Transactional
@@ -194,23 +218,28 @@ public class RevisionAfiliacionService {
         if (!renovacion && aprobada) {
             titulo = "Solicitud aprobada: " + local.getNombre();
             mensaje = "El local ya puede operar en Sazloop. Crea la cuenta del trabajador para que publique "
-                    + "su pack sorpresa. Motivo: " + motivo;
+                    + "su pack sorpresa. " + MOTIVO + motivo;
         } else if (!renovacion) {
             titulo = "Solicitud rechazada: " + local.getNombre();
-            mensaje = "Motivo: " + sinPuntuacionFinal(motivo) + ". Puedes adjuntar nuevos documentos y enviar otra solicitud.";
+            mensaje = MOTIVO + sinPuntuacionFinal(motivo) + ". Puedes adjuntar nuevos documentos y enviar otra solicitud.";
         } else if (aprobada) {
             titulo = "Renovación aprobada: " + local.getNombre();
-            mensaje = (reactivado ? "El local fue reactivado y vuelve a aparecer en la búsqueda. "
-                    : suspendido ? "El local sigue suspendido porque aún tiene documentos vencidos. "
-                    : "Los documentos renovados reemplazan a los anteriores. ") + "Motivo: " + motivo;
+            mensaje = estadoTrasRenovacion(reactivado, suspendido) + MOTIVO + motivo;
         } else {
             titulo = "Renovación rechazada: " + local.getNombre();
-            mensaje = "Motivo: " + sinPuntuacionFinal(motivo) + ". " + (suspendido
+            mensaje = MOTIVO + sinPuntuacionFinal(motivo) + ". " + (suspendido
                     ? "El local sigue suspendido; presenta nuevamente los documentos vencidos."
                     : "Presenta nuevamente los documentos antes de que venzan.");
         }
         notificaciones.crear(local.getEmpresa().getPropietario().getUsuario(),
                 TipoNotificacion.RESULTADO_AFILIACION, titulo, mensaje, "SolicitudAfiliacion", solicitud.getId());
+    }
+
+    /** Frase que explica cómo quedó el local tras aprobarse una renovación. */
+    private static String estadoTrasRenovacion(boolean reactivado, boolean suspendido) {
+        if (reactivado) return "El local fue reactivado y vuelve a aparecer en la búsqueda. ";
+        if (suspendido) return "El local sigue suspendido porque aún tiene documentos vencidos. ";
+        return "Los documentos renovados reemplazan a los anteriores. ";
     }
 
     private boolean esRenovacion(SolicitudAfiliacion s) {

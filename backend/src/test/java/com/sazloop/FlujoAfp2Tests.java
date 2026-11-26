@@ -1,5 +1,6 @@
 package com.sazloop;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.afiliacion.domain.*;
 import com.sazloop.afiliacion.dto.*;
 import com.sazloop.afiliacion.repository.AdministradorPlataformaRepository;
@@ -123,7 +124,7 @@ class FlujoAfp2Tests {
                 cuenta.getNombreUsuario(), "clave-local")).getId());
         PackRequest packNuevo = new PackRequest("Sorpresa", "Excedentes del día",
                 "Pan y fruta", List.of("Trigo"), List.of("Contiene gluten"));
-        LocalDateTime inicio = LocalDateTime.now().plusMinutes(1);
+        LocalDateTime inicio = Tiempo.ahora().plusMinutes(1);
         PublicacionRequest publicacion = new PublicacionRequest(packNuevo,
                 inicio, inicio.plusHours(1), List.of(
                 new OfertaRequest.VarianteRequest(VariantePack.TamanioVariante.PEQUENO,
@@ -172,7 +173,7 @@ class FlujoAfp2Tests {
                 compra.reservaId(), new ResenaRequest(5, "Muy bueno")));
         // Simula el momento del recojo sin demorar el test ni alterar el stock.
         OfertaPack oferta = ofertasRepo.findById(publicada.id()).orElseThrow();
-        oferta.setInicioRecojo(LocalDateTime.now().minusMinutes(1));
+        oferta.setInicioRecojo(Tiempo.ahora().minusMinutes(1));
         ofertasRepo.save(oferta);
         assertEquals(Reserva.EstadoReserva.RECOGIDA,
                 compras.recoger(cuenta, compra.codigoRecojo()).estado());
@@ -213,16 +214,16 @@ class FlujoAfp2Tests {
                 tercera.reservaId(), new ResenaRequest(4, null)));
 
         oferta = ofertasRepo.findById(publicada.id()).orElseThrow();
-        oferta.setFinRecojo(LocalDateTime.now().minusSeconds(1));
+        oferta.setFinRecojo(Tiempo.ahora().minusSeconds(1));
         ofertasRepo.saveAndFlush(oferta);
         Long packPresencial = ofertas.crearPack(cuenta, packNuevo);
         OfertaResponse qrOferta = ofertas.publicar(cuenta, new OfertaRequest(packPresencial,
-                LocalDateTime.now().plusMinutes(1), LocalDateTime.now().plusHours(1), List.of(
+                Tiempo.ahora().plusMinutes(1), Tiempo.ahora().plusHours(1), List.of(
                 new OfertaRequest.VarianteRequest(VariantePack.TamanioVariante.PEQUENO,
                         new BigDecimal("20.00"), new BigDecimal("10.00"), 3))));
         OfertaPack qrEntidad = ofertasRepo.findById(qrOferta.id()).orElseThrow();
         String token = qrEntidad.getTokenQr();
-        qrEntidad.setInicioRecojo(LocalDateTime.now().minusMinutes(1));
+        qrEntidad.setInicioRecojo(Tiempo.ahora().minusMinutes(1));
         ofertasRepo.saveAndFlush(qrEntidad);
         CompraRequest pedidoQr = new CompraRequest(qrOferta.id(), Pago.MedioPago.YAPE,
                 List.of(new CompraRequest.Linea(qrOferta.variantes().getFirst().id(), 1)));
@@ -257,14 +258,14 @@ class FlujoAfp2Tests {
                 new CompraPresencialRequest(token, pedidoEfectivo));
         assertEquals(0, ofertas.consultar(qrOferta.id()).variantes().getFirst().stockDisponible());
         var hold = retencionesRepo.findByReserva_Id(vencible.reservaId()).getFirst();
-        hold.setFechaExpiracion(LocalDateTime.now().minusSeconds(1));
+        hold.setFechaExpiracion(Tiempo.ahora().minusSeconds(1));
         retencionesRepo.saveAndFlush(hold);
         presencial.vencerRetenciones();
         assertEquals(1, ofertas.consultar(qrOferta.id()).variantes().getFirst().stockDisponible());
         assertEquals(Reserva.EstadoReserva.EXPIRADA,
                 compras.consultarCodigo(cuenta, vencible.codigoRecojo()).estado());
         qrEntidad = ofertasRepo.findById(qrOferta.id()).orElseThrow();
-        qrEntidad.setFinRecojo(LocalDateTime.now().minusSeconds(1));
+        qrEntidad.setFinRecojo(Tiempo.ahora().minusSeconds(1));
         ofertasRepo.saveAndFlush(qrEntidad);
         vencimiento.vencer();
         assertEquals(Reserva.EstadoReserva.EXPIRADA,

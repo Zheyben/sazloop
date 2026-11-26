@@ -6,7 +6,7 @@
   <title>Sazloop | Portal del trabajador</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="panel.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.26/dist/sweetalert2.all.min.js" integrity="sha384-YSynQEAHJheMtXcWX0UbcX9moVoO5lqUapIunmQ0nJIYuYW3CdpHh4ckF/Loiasx" crossorigin="anonymous"></script>
   <script type="module" src="trabajador.js"></script>
 </head>
 <body class="panel-app">
@@ -29,7 +29,7 @@
     </nav>
 
     <main class="panel-contenido">
-      <p id="mensaje" role="status" aria-live="polite"></p>
+      <output id="mensaje" aria-live="polite"></output>
       <div id="aviso-suspension"></div>
 
       <section data-panel-vista="vigente" aria-labelledby="titulo-vigente">
@@ -118,7 +118,7 @@
             <div class="tarjeta-panel" style="margin-top:1.2rem" id="resumen-publicacion"></div>
           </fieldset>
 
-          <p id="estado-pack" class="estado-formulario" role="status" aria-live="polite"></p>
+          <output id="estado-pack" class="estado-formulario" aria-live="polite"></output>
           <div class="acciones-formulario">
             <button type="button" class="secundario izquierda" id="paso-anterior" hidden>Atrás</button>
             <button type="button" id="paso-siguiente">Siguiente</button>

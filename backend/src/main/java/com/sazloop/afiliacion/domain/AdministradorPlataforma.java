@@ -1,5 +1,6 @@
 package com.sazloop.afiliacion.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -41,7 +42,7 @@ public class AdministradorPlataforma {
 
     @Builder.Default
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = Tiempo.ahora();
 
     @Builder.Default @OneToMany(mappedBy = "administrador")
     private List<RevisionDocumento> revisiones = new ArrayList<>();

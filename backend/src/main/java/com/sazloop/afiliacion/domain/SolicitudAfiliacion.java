@@ -1,5 +1,6 @@
 package com.sazloop.afiliacion.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.Establecimiento;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,7 +23,7 @@ public class SolicitudAfiliacion {
 
     @Builder.Default
     @Column(name = "fecha_solicitud", nullable = false, updatable = false)
-    private LocalDateTime fechaSolicitud = LocalDateTime.now();
+    private LocalDateTime fechaSolicitud = Tiempo.ahora();
 
     @Builder.Default @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

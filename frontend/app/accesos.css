@@ -69,14 +69,14 @@
 .ayuda-acceso { margin-top: 1.2rem; color: var(--secundario); font-size: .9rem; }
 .selector-acceso { position: relative; z-index: 1; width: min(100%, 420px); margin-top: 2rem; }
 .selector-acceso .etiqueta { margin-bottom: .8rem; }
-.selector-rol { display: flex; gap: .35rem; margin: 0; padding: .3rem; border: 1px solid rgba(24, 58, 43, .16); border-radius: 100px; background: rgba(255, 253, 247, .78); }
+.selector-rol { display: flex; gap: .35rem; min-width: 0; margin: 0; padding: .3rem; border: 1px solid rgba(24, 58, 43, .16); border-radius: 100px; background: rgba(255, 253, 247, .78); }
 .selector-rol button { flex: 1; min-height: 43px; border: 0; border-radius: 100px; color: var(--bosque); background: transparent; font-weight: 750; }
 .selector-rol button[aria-pressed="true"] { color: #fff; background: var(--bosque); box-shadow: 0 3px 10px rgba(24, 58, 43, .15); }
 .selector-rol button:hover:not([aria-pressed="true"]) { background: rgba(24, 58, 43, .09); color: var(--bosque); }
 .modo-empresa .selector-rol { border-color: rgba(255, 255, 255, .3); background: rgba(255, 255, 255, .12); }
 .modo-empresa .selector-rol button { color: #fff; }
 .modo-empresa .selector-rol button[aria-pressed="true"] { color: var(--bosque); background: var(--menta); }
-.modo-empresa .selector-rol button:hover:not([aria-pressed="true"]) { color: #fff; background: rgba(255, 255, 255, .14); }
+.modo-empresa .selector-rol button:hover:not([aria-pressed="true"]) { color: #fff; background: #385648; }
 @media (max-height: 680px) and (min-width: 801px) {
   .panel-historia { gap: 2rem; }
   .historia-contenido { margin-block: 0; }

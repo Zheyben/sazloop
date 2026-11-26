@@ -1,5 +1,6 @@
 package com.sazloop.transacciones.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -33,7 +34,7 @@ public class Reembolso {
 
     @Builder.Default
     @Column(name = "fecha_registro", nullable = false, updatable = false)
-    private LocalDateTime fechaRegistro = LocalDateTime.now();
+    private LocalDateTime fechaRegistro = Tiempo.ahora();
 
     public enum EstadoReembolso { PENDIENTE, PROCESADO, RECHAZADO }
 }

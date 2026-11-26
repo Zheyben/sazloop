@@ -1,5 +1,6 @@
 package com.sazloop.transacciones.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -43,6 +44,6 @@ public class ComisionPlataforma {
 
     @Builder.Default
     @Column(name = "fecha_calculo", nullable = false, updatable = false)
-    private LocalDateTime fechaCalculo = LocalDateTime.now();
+    private LocalDateTime fechaCalculo = Tiempo.ahora();
 }
 

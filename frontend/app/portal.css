@@ -196,7 +196,7 @@
 .carrito-panel { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); gap: clamp(1.5rem, 4vw, 3rem); padding: clamp(1.4rem, 3vw, 2.3rem); border: 1px solid var(--borde); border-radius: 1.3rem; background: var(--marfil); }
 .carrito-titulo h3 { margin: 0 0 .65rem; color: var(--bosque); font: 400 2rem/1.2 var(--serif); }
 .carrito-titulo p { margin: .3rem 0; color: var(--secundario); }
-.carrito-formulario { display: grid; gap: .8rem; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+.carrito-formulario { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; gap: 1.4rem; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
 .carrito-pago { margin: .5rem 0 0; }
 .carrito-pago select { margin-top: .4rem; }
 .carrito-resumen { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--borde); }
@@ -206,16 +206,16 @@
 .compra-confirmada { padding: 2rem; border-radius: 1.3rem; background: #e9f0dc; }
 .compra-confirmada h3 { font: 400 2rem/1.2 var(--serif); }
 .compra-confirmada p { margin-bottom: .6rem; }
-.tarjeta-compra { padding: 1.4rem; border: 1px solid var(--borde); border-radius: 1.2rem; background: var(--marfil); }
+.tarjeta-compra { display: grid; align-content: start; gap: .1rem; padding: 1.4rem; border: 1px solid var(--borde); border-top: 5px solid #c9d3bf; border-radius: 1.2rem; background: var(--marfil); box-shadow: 0 8px 22px rgba(24, 58, 43, .04); }
 .tarjeta-compra h3 { margin: .3rem 0 .8rem; color: var(--bosque); font: 400 1.7rem var(--serif); }
 .tarjeta-compra p { margin: .5rem 0; overflow-wrap: anywhere; }
 .tarjeta-compra .codigo { font-size: 1.15rem; }
-.perfil-datos { max-width: 630px; padding: clamp(1.5rem, 4vw, 2.5rem); border: 1px solid var(--borde); border-radius: 1.3rem; background: var(--marfil); }
+.perfil-datos { max-width: none; padding: clamp(1.5rem, 4vw, 2.5rem); border: 1px solid var(--borde); border-radius: 1.3rem; background: var(--marfil); }
 .perfil-datos h2 { margin-bottom: 1.5rem; }
-.avatar-foto { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.avatar-foto { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
 #perfil-foto { object-fit: cover; }
-.perfil-datos dl { margin: 0; }
-.perfil-datos dl div { padding: .8rem 0; border-top: 1px solid var(--borde); }
+.perfil-datos dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem 1.4rem; margin: 0; }
+.perfil-datos dl div { padding: .8rem 0 0; border-top: 1px solid var(--borde); }
 .perfil-datos dt { color: var(--secundario); font-size: .83rem; }
 .perfil-datos dd { margin: .2rem 0 0; color: var(--bosque); font-weight: 700; overflow-wrap: anywhere; }
 .portal-derecha { display: flex; align-items: center; gap: .45rem; justify-self: end; }
@@ -269,10 +269,8 @@
 }
 
 /* ===== Avance 2: carrito, historial, reseña, perfil y compra presencial ===== */
-.avatar-foto { width: 42px; height: 42px; }
 
 /* Carrito: pedidos a la izquierda, resumen y pago a la derecha */
-.carrito-formulario { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; gap: 1.4rem; }
 .carrito-pedidos { display: grid; gap: 1rem; min-width: 0; }
 .carrito-pedido { display: grid; gap: 1rem; padding: 1.4rem; border: 1px solid #dbe3cf; border-radius: 1.3rem; background: var(--marfil); box-shadow: 0 10px 26px rgba(24, 58, 43, .045); }
 .carrito-pedido.no-disponible { border-style: dashed; background: #f6efe5; }
@@ -298,6 +296,11 @@
 .carrito-metodo small { color: var(--secundario); font-size: .76rem; font-weight: 500; }
 .carrito-metodo:hover { background: #edf2e4; color: var(--bosque); }
 .carrito-metodo[aria-checked="true"] { border: 2px solid var(--bosque); background: #e9f0dc; padding: calc(.8rem - 1px) calc(.9rem - 1px); }
+/* Variante con <label> y radio nativo: el radio cubre la tarjeta, invisible, y recibe el clic y el teclado. */
+label.carrito-metodo { position: relative; display: flex; margin: 0; font-weight: 400; cursor: pointer; }
+.carrito-metodo input[type="radio"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; outline: none; }
+.carrito-metodo:has(input:checked) { border: 2px solid var(--bosque); background: #e9f0dc; padding: calc(.8rem - 1px) calc(.9rem - 1px); }
+.carrito-metodo:has(input:focus-visible) { outline: 3px solid #bc642d; outline-offset: 3px; }
 .carrito-pago-panel fieldset { min-width: 0; margin: 0 0 1rem; padding: 1rem; border: 1px solid var(--borde); border-radius: 1rem; }
 .carrito-pago-panel legend { padding: 0 .4rem; color: var(--bosque); font-weight: 750; }
 .carrito-pago-panel fieldset label { margin: .7rem 0; font-size: .88rem; }
@@ -326,7 +329,6 @@
 .compra-confirmada article { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid rgba(24, 58, 43, .15); }
 
 /* Historial de compras */
-.tarjeta-compra { display: grid; align-content: start; gap: .1rem; border-top: 5px solid #c9d3bf; box-shadow: 0 8px 22px rgba(24, 58, 43, .04); }
 .tarjeta-compra.estado-confirmada { border-top-color: var(--hoja); }
 .tarjeta-compra.estado-recogida { border-top-color: var(--bosque); }
 .tarjeta-compra.estado-cancelada, .tarjeta-compra.estado-expirada { border-top-color: #c97b5a; }
@@ -352,7 +354,7 @@
 .resena-cerrar:hover { background: var(--menta); color: var(--bosque); }
 .resena-estrellas { display: flex; justify-content: center; gap: .35rem; margin: .8rem 0 .2rem; }
 .resena-estrella { min-height: 52px; width: 52px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: #cfd8c4; font-size: 2.6rem; line-height: 1; }
-.resena-estrella:hover { background: #edf2e4; color: #d9a441; }
+.resena-estrella:hover { background: #edf2e4; color: #8a5a00; }
 .resena-estrella.activa { color: #e0a82e; }
 .resena-leyenda { margin: 0 0 1rem; text-align: center; color: var(--secundario); font-size: .88rem; font-weight: 650; }
 .dialogo-resena textarea { resize: vertical; }
@@ -371,13 +373,10 @@
 .perfil-identidad form small { display: block; color: var(--secundario); font-weight: 500; }
 .perfil-identidad form button { width: 100%; }
 .perfil-columna { display: grid; gap: 1.2rem; min-width: 0; }
-.perfil-datos { max-width: none; }
 .perfil-datos-encabezado { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .8rem; margin-bottom: 1.2rem; }
 .perfil-datos-encabezado h2 { margin: 0; font-size: 1.7rem; }
 .perfil-ayuda { margin: .2rem 0 0; color: var(--secundario); font-size: .86rem; }
 .perfil-datos-encabezado button { min-height: 42px; font-size: .88rem; }
-.perfil-datos dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem 1.4rem; }
-.perfil-datos dl div { padding: .8rem 0 0; }
 .perfil-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .2rem 1.2rem; }
 .perfil-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; margin-top: 1rem; }
 .perfil-datos form { padding: 0; border: 0; box-shadow: none; background: transparent; }

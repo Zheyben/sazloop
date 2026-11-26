@@ -1,5 +1,6 @@
 package com.sazloop;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.afiliacion.domain.AdministradorPlataforma;
 import com.sazloop.afiliacion.domain.DocumentoEstablecimiento.TipoDocumento;
 import com.sazloop.afiliacion.domain.EvaluacionAfiliacion;
@@ -107,7 +108,7 @@ class VigenciaYAvisosTests {
                 new CuentaLocalRequest("vigencia-" + UUID.randomUUID(), "clave-local"));
         OfertaResponse oferta = ofertas.crearYPublicar(cuenta, new PublicacionRequest(
                 new PackRequest("Pack vigencia", "Excedentes", "Pan", List.of(), List.of()),
-                LocalDateTime.now().plusMinutes(1), LocalDateTime.now().plusHours(2), List.of(
+                Tiempo.ahora().plusMinutes(1), Tiempo.ahora().plusHours(2), List.of(
                 new OfertaRequest.VarianteRequest(VariantePack.TamanioVariante.MEDIANO,
                         new BigDecimal("20.00"), new BigDecimal("8.00"), 3))));
         Long consumidor = usuario();
@@ -133,7 +134,7 @@ class VigenciaYAvisosTests {
         assertThrows(ResponseStatusException.class, () -> compras.comprar(consumidor, pedido));
         Long packId = ofertas.listarPacks(cuenta).getFirst().id();
         assertThrows(ResponseStatusException.class, () -> ofertas.publicar(cuenta, new OfertaRequest(
-                packId, LocalDateTime.now().plusHours(3), LocalDateTime.now().plusHours(4),
+                packId, Tiempo.ahora().plusHours(3), Tiempo.ahora().plusHours(4),
                 List.of(new OfertaRequest.VarianteRequest(VariantePack.TamanioVariante.GRANDE,
                         new BigDecimal("30.00"), new BigDecimal("12.00"), 1)))));
 
@@ -143,7 +144,7 @@ class VigenciaYAvisosTests {
         CuentaEstablecimiento suspendida = cuentas.obtener(cuenta.getId());
         assertEquals(EstadoEstablecimiento.SUSPENDIDO, panel.resumen(suspendida).estadoLocal());
         OfertaPack entidad = ofertasRepo.findById(oferta.id()).orElseThrow();
-        entidad.setInicioRecojo(LocalDateTime.now().minusMinutes(1));
+        entidad.setInicioRecojo(Tiempo.ahora().minusMinutes(1));
         ofertasRepo.saveAndFlush(entidad);
         long impactosAntes = impactos.count();
         assertEquals(Reserva.EstadoReserva.RECOGIDA, compras.recoger(suspendida, pagada.codigoRecojo()).estado());
@@ -192,7 +193,7 @@ class VigenciaYAvisosTests {
                 new CuentaLocalRequest("avisos-" + UUID.randomUUID(), "clave-local"));
         OfertaResponse oferta = ofertas.crearYPublicar(cuenta, new PublicacionRequest(
                 new PackRequest("Pack avisos", "Excedentes", "Fruta", List.of(), List.of()),
-                LocalDateTime.now().plusMinutes(1), LocalDateTime.now().plusHours(2), List.of(
+                Tiempo.ahora().plusMinutes(1), Tiempo.ahora().plusHours(2), List.of(
                 new OfertaRequest.VarianteRequest(VariantePack.TamanioVariante.PEQUENO,
                         new BigDecimal("10.00"), new BigDecimal("6.00"), 2))));
         Long consumidor = usuario();

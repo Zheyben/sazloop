@@ -9,30 +9,33 @@ export async function solicitar(ruta, opciones = {}) {
     credentials: 'include',
     headers: { ...(esFormData || !opciones.body ? {} : { 'Content-Type': 'application/json' }), ...opciones.headers }
   });
-  if (!r.ok) {
-    // Se muestra el motivo de negocio que envía el backend; si no hay uno útil, se traduce el código HTTP.
-    const textos = {
-      400: 'Revisa los datos ingresados.',
-      401: 'Necesitas iniciar sesión para hacer esto.',
-      403: 'No tienes permiso para esta acción.',
-      404: 'No se encontró lo que buscabas.',
-      409: 'La operación no se pudo completar (por ejemplo, sin stock o ya existe).',
-      413: 'El archivo supera el tamaño permitido.'
-    };
-    let motivo = '';
-    try { motivo = (await r.json())?.message || ''; } catch { /* respuesta sin cuerpo JSON */ }
-    const util = motivo && r.status < 500 && motivo !== 'No message available'
-      && !/^(\d{3} [A-Z_]+$|Validation failed|Bad Request|Not Found|Conflict|Unauthorized|Forbidden|Required)/i.test(motivo);
-    // Un error del servidor (5xx) se identifica con su código y la ruta, para poder diagnosticarlo.
-    const generico = r.status >= 500 ? `Ocurrió un error inesperado en el servidor (código ${r.status}). Intenta de nuevo; si continúa, avisa al equipo.`
-      : textos[r.status] || 'Ocurrió un error inesperado. Intenta de nuevo.';
-    if (r.status >= 500) console.error('[Sazloop]', opciones.method || 'GET', ruta, '→', r.status, motivo);
-    const error = new Error(util ? motivo : generico);
-    error.status = r.status;
-    error.ruta = ruta;
-    throw error;
-  }
+  if (!r.ok) throw await errorDeRespuesta(r, ruta, opciones);
   return r.status === 204 ? null : r.json();
+}
+
+// Convierte una respuesta HTTP con error en un Error con el mensaje que se mostrará.
+async function errorDeRespuesta(r, ruta, opciones) {
+  // Se muestra el motivo de negocio que envía el backend; si no hay uno útil, se traduce el código HTTP.
+  const textos = {
+    400: 'Revisa los datos ingresados.',
+    401: 'Necesitas iniciar sesión para hacer esto.',
+    403: 'No tienes permiso para esta acción.',
+    404: 'No se encontró lo que buscabas.',
+    409: 'La operación no se pudo completar (por ejemplo, sin stock o ya existe).',
+    413: 'El archivo supera el tamaño permitido.'
+  };
+  let motivo = '';
+  try { motivo = (await r.json())?.message || ''; } catch { /* respuesta sin cuerpo JSON */ }
+  const util = motivo && r.status < 500 && motivo !== 'No message available'
+    && !/^(\d{3} [A-Z_]+$|Validation failed|Bad Request|Not Found|Conflict|Unauthorized|Forbidden|Required)/i.test(motivo);
+  // Un error del servidor (5xx) se identifica con su código y la ruta, para poder diagnosticarlo.
+  const generico = r.status >= 500 ? `Ocurrió un error inesperado en el servidor (código ${r.status}). Intenta de nuevo; si continúa, avisa al equipo.`
+    : textos[r.status] || 'Ocurrió un error inesperado. Intenta de nuevo.';
+  if (r.status >= 500) console.error('[Sazloop]', opciones.method || 'GET', ruta, '→', r.status, motivo);
+  const error = new Error(util ? motivo : generico);
+  error.status = r.status;
+  error.ruta = ruta;
+  return error;
 }
 
 // Crea elementos sin usar innerHTML (así evitamos inyección de HTML con datos del servidor).
@@ -77,12 +80,11 @@ function dialogoAbierto() {
 }
 
 /** Alerta modal de SweetAlert2, con el verde de la marca. */
-export function notificar({ icon = 'info', title, text, confirmButtonText } = {}) {
+export async function notificar({ icon = 'info', title, text, confirmButtonText } = {}) {
   const aviso = [title, text].filter(Boolean).join('\n');
   if (!globalThis.Swal) {
-    if (icon === 'success') return Promise.resolve({ isConfirmed: true });
-    alert(aviso);
-    return Promise.resolve({ isConfirmed: true });
+    if (icon !== 'success') alert(aviso);
+    return { isConfirmed: true };
   }
   const dialogo = dialogoAbierto();
   return Swal.fire({

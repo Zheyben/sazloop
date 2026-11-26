@@ -63,9 +63,34 @@ async function abrirSolicitud(id) {
       insigniaLocal(s.estadoLocal)),
     s.renovacion ? banda('info', 'Renovación',
       'Al aprobarla, estos documentos reemplazan a los anteriores del mismo tipo. Si el local está suspendido y ya no le quedan documentos vencidos, se reactiva automáticamente.') : '',
-    s.estado === 'EN_REVISION' ? formularioResolucion(s)
-      : el('div', {}, ...s.documentos.map(tarjetaLectura),
-        banda('info', 'Solicitud resuelta', s.motivoDecision ? `Motivo: ${s.motivoDecision}` : '')));
+    contenidoSolicitud(s));
+}
+
+/** Una solicitud en revisión muestra el formulario de resolución; una resuelta, sus documentos y el motivo. */
+function contenidoSolicitud(s) {
+  if (s.estado === 'EN_REVISION') return formularioResolucion(s);
+  const motivo = s.motivoDecision ? `Motivo: ${s.motivoDecision}` : '';
+  return el('div', {}, ...s.documentos.map(tarjetaLectura), banda('info', 'Solicitud resuelta', motivo));
+}
+
+/** Frase que anticipa la decisión según si todos los documentos están aprobados. */
+function textoDecision(aprueba, renovacion) {
+  if (aprueba) return renovacion ? 'Se aprobará la renovación del local.' : 'Se aprobará el local.';
+  return renovacion ? 'Se rechazará la renovación porque hay documentos rechazados.'
+    : 'Se rechazará la solicitud porque hay documentos rechazados.';
+}
+
+/** Mensaje que se muestra tras guardar la decisión. */
+function textoResultado(aprobo, renovacion) {
+  if (!aprobo) return 'Solicitud rechazada. El propietario recibirá el motivo.';
+  return renovacion ? 'Renovación aprobada. El propietario fue notificado.'
+    : 'Local aprobado. El propietario ya puede crear la cuenta del trabajador.';
+}
+
+/** Detalle de un local suspendido: motivo, desde cuándo y si la suspensión fue automática. */
+function textoSuspension(local) {
+  const automatica = local.suspensionAutomatica ? ' (suspensión automática)' : '';
+  return `${local.motivoSuspension || 'Suspendido'} · desde el ${fecha(local.suspendidoDesde)}${automatica}`;
 }
 
 const hoyLocal = () => {
@@ -123,10 +148,7 @@ function formularioResolucion(s) {
   const boton = el('button', { type: 'submit', textContent: 'Guardar decisión' });
   const aprobado = fila => fila.previa ? fila.doc.resultado === 'APROBADO' : fila.aprobar.checked;
   const actualizar = () => {
-    resultadoFinal.textContent = filas.every(aprobado)
-      ? (s.renovacion ? 'Se aprobará la renovación del local.' : 'Se aprobará el local.')
-      : (s.renovacion ? 'Se rechazará la renovación porque hay documentos rechazados.'
-        : 'Se rechazará la solicitud porque hay documentos rechazados.');
+    resultadoFinal.textContent = textoDecision(filas.every(aprobado), s.renovacion);
   };
   formulario.addEventListener('change', actualizar);
   actualizar();
@@ -151,11 +173,7 @@ function formularioResolucion(s) {
       }) });
       const aprobo = filas.every(aprobado);
       mostrar('solicitudes');
-      mensaje(aprobo
-        ? (s.renovacion ? 'Renovación aprobada. El propietario fue notificado.'
-          : 'Local aprobado. El propietario ya puede crear la cuenta del trabajador.')
-        : 'Solicitud rechazada. El propietario recibirá el motivo.',
-        false, aprobo ? 'Decisión guardada' : 'Solicitud rechazada');
+      mensaje(textoResultado(aprobo, s.renovacion), false, aprobo ? 'Decisión guardada' : 'Solicitud rechazada');
     } catch (error) {
       estadoEn(estado, error.message, true, 'No se pudo guardar la decisión');
       boton.disabled = false;
@@ -181,8 +199,7 @@ function pintarEstablecimientos() {
   zona.replaceChildren(tabla([['Local'], ['Empresa'], ['Distrito'], ['Estado'], ['Detalle']], lista.map(l => [
     l.nombre, `${l.empresa} · RUC ${l.ruc}`, l.distrito, insigniaLocal(l.estado),
     el('div', { style: 'display:grid; gap:.35rem' },
-      l.estado === 'SUSPENDIDO' ? el('span', { textContent:
-        `${l.motivoSuspension || 'Suspendido'} · desde el ${fecha(l.suspendidoDesde)}${l.suspensionAutomatica ? ' (suspensión automática)' : ''}` }) : null,
+      l.estado === 'SUSPENDIDO' ? el('span', { textContent: textoSuspension(l) }) : null,
       l.solicitudEnRevision ? insignia('Solicitud en revisión', 'info') : null,
       l.estado !== 'SUSPENDIDO' && !l.solicitudEnRevision ? el('span', { className: 'nota', textContent: '—' }) : null)
   ])));

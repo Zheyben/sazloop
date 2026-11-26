@@ -1,5 +1,6 @@
 package com.sazloop.afiliacion.service;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.afiliacion.domain.AdministradorPlataforma;
 import com.sazloop.afiliacion.domain.DocumentoEstablecimiento;
 import com.sazloop.afiliacion.domain.DocumentoEstablecimiento.TipoDocumento;
@@ -21,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumMap;
 import java.util.List;
@@ -39,7 +39,6 @@ public class VigenciaDocumentosService {
     public static final int DIAS_AVISO = 7;
     /** Cuenta interna, sin acceso, que firma las suspensiones automáticas. */
     public static final String CORREO_SISTEMA = "sistema@sazloop.local";
-    private static final ZoneId LIMA = ZoneId.of("America/Lima");
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final EstablecimientoRepository establecimientos;
@@ -63,7 +62,7 @@ public class VigenciaDocumentosService {
 
     public enum EstadoVigencia { VIGENTE, POR_VENCER, VENCIDO, SIN_VENCIMIENTO }
 
-    public static LocalDate hoy() { return LocalDate.now(LIMA); }
+    public static LocalDate hoy() { return Tiempo.hoy(); }
 
     /** Un documento vale hasta el final del día de su vencimiento; el aviso empieza siete días antes. */
     public static EstadoVigencia estado(DocumentoEstablecimiento documento, LocalDate hoy) {
@@ -134,7 +133,7 @@ public class VigenciaDocumentosService {
         if (local.getEstado() != EstadoEstablecimiento.SUSPENDIDO || !tiposVencidos(local.getId(), hoy()).isEmpty())
             return false;
         local.setEstado(EstadoEstablecimiento.ACTIVO);
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         for (SuspensionEstablecimiento suspension : suspensiones.findByEstablecimiento_IdAndActivaTrue(local.getId())) {
             suspension.setActiva(false);
             suspension.setFechaFin(ahora);

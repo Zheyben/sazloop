@@ -227,18 +227,32 @@ function validarPaso(indice) {
       return false;
     }
   }
-  if (indice === 1) {
-    const elegidas = variantesElegidas();
-    if (!elegidas.length) { estadoEn(estado, 'Incluye al menos un tamaño.', true, 'Falta un tamaño'); return false; }
-    if (elegidas.some(v => Number(v.precioDescuento) >= Number(v.precioReferencial))) {
-      estadoEn(estado, 'El precio con descuento debe ser menor que el precio regular.', true, 'Revisa los precios'); return false;
-    }
+  if (indice === 1) return validarVariantes(estado);
+  if (indice === 2) return validarHorario(estado);
+  return true;
+}
+
+function validarVariantes(estado) {
+  const elegidas = variantesElegidas();
+  if (!elegidas.length) { estadoEn(estado, 'Incluye al menos un tamaño.', true, 'Falta un tamaño'); return false; }
+  if (elegidas.some(v => Number(v.precioDescuento) >= Number(v.precioReferencial))) {
+    estadoEn(estado, 'El precio con descuento debe ser menor que el precio regular.', true, 'Revisa los precios');
+    return false;
   }
-  if (indice === 2) {
-    const inicio = new Date(form.elements.inicioRecojo.value);
-    const fin = new Date(form.elements.finRecojo.value);
-    if (inicio < new Date(Date.now() - 5 * 60000)) { estadoEn(estado, 'El inicio del recojo no puede estar en el pasado.', true, 'Revisa el horario'); return false; }
-    if (!(fin > inicio)) { estadoEn(estado, 'El fin del recojo debe ser posterior al inicio.', true, 'Revisa el horario'); return false; }
+  return true;
+}
+
+function validarHorario(estado) {
+  const inicio = new Date(form.elements.inicioRecojo.value);
+  const fin = new Date(form.elements.finRecojo.value);
+  if (inicio < new Date(Date.now() - 5 * 60000)) {
+    estadoEn(estado, 'El inicio del recojo no puede estar en el pasado.', true, 'Revisa el horario');
+    return false;
+  }
+  const duracion = fin - inicio; // NaN si falta alguna de las dos fechas
+  if (Number.isNaN(duracion) || duracion <= 0) {
+    estadoEn(estado, 'El fin del recojo debe ser posterior al inicio.', true, 'Revisa el horario');
+    return false;
   }
   return true;
 }
@@ -261,14 +275,32 @@ function pintarRevision() {
 function pintarDisponibilidadPublicacion() {
   const aviso = document.querySelector('#aviso-publicacion');
   const bloqueado = suspendido() || Boolean(resumen.ofertaVigente);
-  aviso.replaceChildren(...(suspendido()
-    ? [banda('peligro', 'No puedes publicar mientras el local esté suspendido', 'Tu empresa debe renovar los documentos vencidos.')]
-    : resumen.ofertaVigente
-      ? [banda('info', 'Ya tienes un pack publicado',
-        `Está vigente hasta ${fecha(resumen.ofertaVigente.finRecojo)} a las ${hora(resumen.ofertaVigente.finRecojo)}. Cada local mantiene una sola oferta activa; podrás publicar otra cuando termine su horario.`)]
-      : []));
+  let bandas = [];
+  if (suspendido()) {
+    bandas = [banda('peligro', 'No puedes publicar mientras el local esté suspendido', 'Tu empresa debe renovar los documentos vencidos.')];
+  } else if (resumen.ofertaVigente) {
+    bandas = [banda('info', 'Ya tienes un pack publicado',
+      `Está vigente hasta ${fecha(resumen.ofertaVigente.finRecojo)} a las ${hora(resumen.ofertaVigente.finRecojo)}. Cada local mantiene una sola oferta activa; podrás publicar otra cuando termine su horario.`)];
+  }
+  aviso.replaceChildren(...bandas);
   form.querySelectorAll('fieldset.paso-formulario').forEach(f => { f.disabled = bloqueado; });
   for (const boton of form.querySelectorAll('.acciones-formulario button')) boton.disabled = bloqueado;
+}
+
+/** Datos del pack que se crea junto con la oferta, tomados del formulario. */
+function packNuevo(datos) {
+  const otro = (datos.get('otroAlergeno') || '').trim();
+  return {
+    nombre: datos.get('nombre').trim(),
+    descripcion: datos.get('descripcion').trim(),
+    posiblesProductos: datos.get('posiblesProductos').trim(),
+    alergenos: [...new Set([...datos.getAll('alergeno'), ...(otro ? [otro] : [])])],
+    restricciones: [
+      datos.has('aptoVegetarianos') ? 'Apto para vegetarianos' : 'No apto para vegetarianos',
+      datos.has('aptoVeganos') ? 'Apto para veganos' : 'No apto para veganos',
+      datos.has('aptoCeliacos') ? 'Apto para personas con celiaquía' : 'No apto para personas con celiaquía'
+    ]
+  };
 }
 
 async function publicar(evento) {
@@ -277,20 +309,8 @@ async function publicar(evento) {
   const nuevo = form.elements.origen.value === 'nuevo';
   const datos = new FormData(form);
   const cuerpo = { inicioRecojo: datos.get('inicioRecojo'), finRecojo: datos.get('finRecojo'), variantes: variantesElegidas() };
-  if (nuevo) {
-    const otro = (datos.get('otroAlergeno') || '').trim();
-    cuerpo.pack = {
-      nombre: datos.get('nombre').trim(),
-      descripcion: datos.get('descripcion').trim(),
-      posiblesProductos: datos.get('posiblesProductos').trim(),
-      alergenos: [...new Set([...datos.getAll('alergeno'), ...(otro ? [otro] : [])])],
-      restricciones: [
-        datos.has('aptoVegetarianos') ? 'Apto para vegetarianos' : 'No apto para vegetarianos',
-        datos.has('aptoVeganos') ? 'Apto para veganos' : 'No apto para veganos',
-        datos.has('aptoCeliacos') ? 'Apto para personas con celiaquía' : 'No apto para personas con celiaquía'
-      ]
-    };
-  } else cuerpo.packId = Number(datos.get('packId'));
+  if (nuevo) cuerpo.pack = packNuevo(datos);
+  else cuerpo.packId = Number(datos.get('packId'));
   const boton = document.querySelector('#publicar');
   boton.disabled = true;
   try {
@@ -332,38 +352,27 @@ document.querySelector('#form-codigo').addEventListener('submit', async evento =
     } else {
       notificarError(error, 'No se pudo consultar el código');
     }
-    resultado.replaceChildren(error.status === 404
-      ? banda('alerta', 'No encontramos ese código en este local', 'Revisa que el cliente lo haya dictado completo.')
-      : banda('peligro', 'No se pudo consultar el código',
-        esFalloDeRed(error) ? 'Revisa tu conexión e intenta de nuevo.' : error.message));
+    resultado.replaceChildren(bandaErrorCodigo(error));
   }
 });
+
+/** Banda de aviso cuando falla la búsqueda de un código de recojo. */
+function bandaErrorCodigo(error) {
+  if (error.status === 404) {
+    return banda('alerta', 'No encontramos ese código en este local', 'Revisa que el cliente lo haya dictado completo.');
+  }
+  return banda('peligro', 'No se pudo consultar el código',
+    esFalloDeRed(error) ? 'Revisa tu conexión e intenta de nuevo.' : error.message);
+}
 
 function pintarCompra(compra, codigo, recienEntregada = false) {
   const [texto, tono] = ESTADOS_COMPRA[compra.estado] || [compra.estado, ''];
   const zonaAccion = el('div', { className: 'acciones-formulario' });
   const estado = el('p', { className: 'estado-formulario', role: 'status' });
   const delivery = esDelivery(compra);
-  if (compra.estado === 'CONFIRMADA') {
-    zonaAccion.append(el('button', { type: 'button', textContent: delivery ? 'Entregado al repartidor' : 'Confirmar entrega',
-      onclick: e => confirmar(e.currentTarget, `/local/recojos/${encodeURIComponent(codigo)}/confirmar`, estado, codigo) }));
-    estadoEn(estado, delivery
-      ? `Entrega el pedido al repartidor de ${textoDelivery(compra).split(' – ')[0]} y luego confirma. Puedes entregarlo hasta las ${hora(compra.finRecojo)}.`
-      : `Entrega el pedido al cliente y luego confirma. Puedes entregarlo hasta las ${hora(compra.finRecojo)}.`);
-  } else if (compra.estado === 'PENDIENTE_PAGO' && compra.medioPago === 'EFECTIVO') {
-    zonaAccion.append(el('button', { type: 'button', textContent: 'Recibí el efectivo y entregué el pedido',
-      onclick: e => confirmar(e.currentTarget, `/local/efectivo/${encodeURIComponent(codigo)}/confirmar`, estado, codigo) }));
-    estadoEn(estado, 'Cobra el total en efectivo antes de confirmar. La reserva se libera a los 10 minutos si no se confirma.');
-  } else if (!recienEntregada) {
-    estadoEn(estado, compra.estado === 'RECOGIDA' ? 'Este pedido ya fue entregado; el código no puede volver a usarse.'
-      : 'Este pedido no tiene una entrega pendiente.', compra.estado !== 'RECOGIDA');
-  }
-  const comision = Math.round(Number(compra.total) * 10) / 100;
+  prepararAccion(compra, codigo, estado, zonaAccion, delivery, recienEntregada);
   resultado.replaceChildren(
-    recienEntregada ? el('div', { className: 'confirmado', role: 'status' }, el('span', { ariaHidden: 'true', textContent: '✓' }),
-      el('div', {}, el('strong', { textContent: delivery ? 'Entregado al repartidor correctamente' : 'Entrega confirmada correctamente' }),
-        el('p', { style: 'margin:.2rem 0 0; font-weight:500', textContent:
-          `El código quedó utilizado. Venta ${dinero(compra.total)} − comisión de Sazloop ${dinero(comision)} = ganancia neta ${dinero(Number(compra.total) - comision)}; ya figura en «Pack sorpresa».` }))) : '',
+    recienEntregada ? confirmacionEntrega(compra, delivery) : '',
     el('article', { className: 'tarjeta-panel', style: recienEntregada ? 'margin-top:1rem' : '' },
       el('header', {}, el('span', { className: 'codigo-grande', textContent: compra.codigoRecojo }), insignia(texto, tono)),
       delivery ? el('div', { className: 'aviso-delivery', role: 'note' },
@@ -379,6 +388,33 @@ function pintarCompra(compra, codigo, recienEntregada = false) {
         dato('Medio de pago', MEDIOS[compra.medioPago] || compra.medioPago),
         dato(delivery ? 'Entregar al repartidor' : 'Horario de recojo', rangoHorario(compra.inicioRecojo, compra.finRecojo))),
       zonaAccion, estado));
+}
+
+/** Botón y mensaje de acción de un pedido, según su estado y su medio de pago. */
+function prepararAccion(compra, codigo, estado, zonaAccion, delivery, recienEntregada) {
+  if (compra.estado === 'CONFIRMADA') {
+    zonaAccion.append(el('button', { type: 'button', textContent: delivery ? 'Entregado al repartidor' : 'Confirmar entrega',
+      onclick: e => confirmar(e.currentTarget, `/local/recojos/${encodeURIComponent(codigo)}/confirmar`, estado, codigo) }));
+    estadoEn(estado, delivery
+      ? `Entrega el pedido al repartidor de ${textoDelivery(compra).split(' – ')[0]} y luego confirma. Puedes entregarlo hasta las ${hora(compra.finRecojo)}.`
+      : `Entrega el pedido al cliente y luego confirma. Puedes entregarlo hasta las ${hora(compra.finRecojo)}.`);
+  } else if (compra.estado === 'PENDIENTE_PAGO' && compra.medioPago === 'EFECTIVO') {
+    zonaAccion.append(el('button', { type: 'button', textContent: 'Recibí el efectivo y entregué el pedido',
+      onclick: e => confirmar(e.currentTarget, `/local/efectivo/${encodeURIComponent(codigo)}/confirmar`, estado, codigo) }));
+    estadoEn(estado, 'Cobra el total en efectivo antes de confirmar. La reserva se libera a los 10 minutos si no se confirma.');
+  } else if (!recienEntregada) {
+    estadoEn(estado, compra.estado === 'RECOGIDA' ? 'Este pedido ya fue entregado; el código no puede volver a usarse.'
+      : 'Este pedido no tiene una entrega pendiente.', compra.estado !== 'RECOGIDA');
+  }
+}
+
+/** Aviso verde tras confirmar la entrega, con la venta, la comisión y la ganancia neta. */
+function confirmacionEntrega(compra, delivery) {
+  const comision = Math.round(Number(compra.total) * 10) / 100;
+  return el('div', { className: 'confirmado', role: 'status' }, el('span', { ariaHidden: 'true', textContent: '✓' }),
+    el('div', {}, el('strong', { textContent: delivery ? 'Entregado al repartidor correctamente' : 'Entrega confirmada correctamente' }),
+      el('p', { style: 'margin:.2rem 0 0; font-weight:500', textContent:
+        `El código quedó utilizado. Venta ${dinero(compra.total)} − comisión de Sazloop ${dinero(comision)} = ganancia neta ${dinero(Number(compra.total) - comision)}; ya figura en «Pack sorpresa».` })));
 }
 
 const dato = (titulo, valor) => el('div', {}, el('dt', { textContent: titulo }), el('dd', { textContent: valor || '—' }));

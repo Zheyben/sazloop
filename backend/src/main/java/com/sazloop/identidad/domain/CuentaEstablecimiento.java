@@ -1,5 +1,6 @@
 package com.sazloop.identidad.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -34,7 +35,7 @@ public class CuentaEstablecimiento {
 
     @Builder.Default
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = Tiempo.ahora();
 
     @Column(name = "ultimo_acceso")
     private LocalDateTime ultimoAcceso;

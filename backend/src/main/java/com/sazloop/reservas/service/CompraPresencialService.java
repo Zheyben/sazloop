@@ -1,5 +1,6 @@
 package com.sazloop.reservas.service;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.*;
 import com.sazloop.experiencia.service.ImpactoService;
 import com.sazloop.identidad.repository.*;
@@ -65,35 +66,13 @@ public class CompraPresencialService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere efectivo");
         OfertaPack oferta = ofertas.bloquear(entrada.ofertaId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        LocalDateTime ahora = LocalDateTime.now();
-        if (oferta.getTokenQr() == null || !oferta.getTokenQr().equals(solicitud.token()))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "QR no válido para la compra presencial");
-        if (oferta.getEstado() != OfertaPack.EstadoOferta.ACTIVA ||
-                oferta.getPackSorpresa().getEstablecimiento().getEstado()
-                    != Establecimiento.EstadoEstablecimiento.ACTIVO || !ahora.isBefore(oferta.getFinRecojo()))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Oferta no disponible");
-        Map<Long, Integer> cantidades = new LinkedHashMap<>();
-        for (CompraRequest.Linea linea : entrada.lineas()) {
-            if (linea.cantidad() < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-            cantidades.merge(linea.varianteId(), linea.cantidad(), (a, b) -> {
-                try { return Math.addExact(a, b); }
-                catch (ArithmeticException ex) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST); }
-            });
-        }
+        LocalDateTime ahora = Tiempo.ahora();
+        exigirOfertaPresencial(oferta, solicitud.token(), ahora);
+        Map<Long, Integer> cantidades = agruparCantidades(entrada);
         Map<Long, VariantePack> disponibles = new HashMap<>();
         oferta.getVariantes().forEach(v -> disponibles.put(v.getId(), v));
-        BigDecimal total = BigDecimal.ZERO;
-        for (var linea : cantidades.entrySet()) {
-            VariantePack v = disponibles.get(linea.getKey());
-            if (v == null || !v.isActiva() || v.getStockDisponible() < linea.getValue())
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Stock insuficiente");
-            total = total.add(v.getPrecioDescuento().multiply(BigDecimal.valueOf(linea.getValue())));
-        }
-        Usuario usuario = usuarios.findById(usuarioId).filter(Usuario::isActivo)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        Consumidor consumidor = consumidores.findByUsuario_Id(usuarioId)
-                .orElseGet(() -> consumidores.save(Consumidor.builder().usuario(usuario).build()));
-        if (!consumidor.isActivo()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        BigDecimal total = totalConStock(cantidades, disponibles);
+        Consumidor consumidor = consumidorActivo(usuarioId);
         // El token del QR no cambia durante la oferta: solo se permite una reserva en efectivo pendiente a la vez.
         if (retenciones.existsByConsumidor_IdAndEstadoAndFechaExpiracionAfter(
                 consumidor.getId(), RetencionStock.EstadoRetencion.ACTIVA, ahora))
@@ -126,6 +105,52 @@ public class CompraPresencialService {
         return new RetencionResponse(guardada.getId(), guardada.getCodigoRecojo().getCodigo(), total, vence);
     }
 
+    /** El QR debe ser el de la oferta y la oferta debe seguir activa, con su local operando y dentro del horario. */
+    private static void exigirOfertaPresencial(OfertaPack oferta, String token, LocalDateTime ahora) {
+        if (oferta.getTokenQr() == null || !oferta.getTokenQr().equals(token))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "QR no válido para la compra presencial");
+        boolean localActivo = oferta.getPackSorpresa().getEstablecimiento().getEstado()
+                == Establecimiento.EstadoEstablecimiento.ACTIVO;
+        if (oferta.getEstado() != OfertaPack.EstadoOferta.ACTIVA || !localActivo
+                || !ahora.isBefore(oferta.getFinRecojo()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Oferta no disponible");
+    }
+
+    /** Suma las cantidades pedidas por variante; rechaza cantidades menores a 1 o que desborden el entero. */
+    private static Map<Long, Integer> agruparCantidades(CompraRequest entrada) {
+        Map<Long, Integer> cantidades = new LinkedHashMap<>();
+        for (CompraRequest.Linea linea : entrada.lineas()) {
+            if (linea.cantidad() < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            cantidades.merge(linea.varianteId(), linea.cantidad(), (a, b) -> {
+                try { return Math.addExact(a, b); }
+                catch (ArithmeticException ex) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST); }
+            });
+        }
+        return cantidades;
+    }
+
+    /** Verifica que cada variante esté activa y con stock suficiente, y devuelve el total a pagar. */
+    private static BigDecimal totalConStock(Map<Long, Integer> cantidades, Map<Long, VariantePack> disponibles) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (var linea : cantidades.entrySet()) {
+            VariantePack v = disponibles.get(linea.getKey());
+            if (v == null || !v.isActiva() || v.getStockDisponible() < linea.getValue())
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Stock insuficiente");
+            total = total.add(v.getPrecioDescuento().multiply(BigDecimal.valueOf(linea.getValue())));
+        }
+        return total;
+    }
+
+    /** El consumidor de la sesión, creado si aún no existe; debe estar activo. */
+    private Consumidor consumidorActivo(Long usuarioId) {
+        Usuario usuario = usuarios.findById(usuarioId).filter(Usuario::isActivo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        Consumidor consumidor = consumidores.findByUsuario_Id(usuarioId)
+                .orElseGet(() -> consumidores.save(Consumidor.builder().usuario(usuario).build()));
+        if (!consumidor.isActivo()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        return consumidor;
+    }
+
     @Transactional
     public CompraResponse confirmarEfectivo(CuentaEstablecimiento cuenta, String codigo) {
         Reserva reserva = reservas.findById(codigoReserva(codigo))
@@ -136,7 +161,7 @@ public class CompraPresencialService {
         if (reserva.getEstado() != Reserva.EstadoReserva.PENDIENTE_PAGO ||
                 reserva.getPago().getMedioPago() != Pago.MedioPago.EFECTIVO)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No hay efectivo pendiente");
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         List<RetencionStock> holds = retenciones.findByReserva_Id(reserva.getId());
         if (holds.isEmpty() || !ahora.isBefore(holds.getFirst().getFechaExpiracion()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "La retención venció");
@@ -178,7 +203,7 @@ public class CompraPresencialService {
     @Scheduled(fixedDelay = 60000)
     @Transactional
     public void vencerRetenciones() {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = Tiempo.ahora();
         retenciones.findByEstadoAndFechaExpiracionLessThanEqual(
                 RetencionStock.EstadoRetencion.ACTIVA, ahora).stream()
                 .map(hold -> hold.getReserva().getId()).distinct()

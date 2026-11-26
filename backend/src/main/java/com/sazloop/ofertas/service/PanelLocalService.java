@@ -8,6 +8,8 @@ import com.sazloop.ofertas.domain.OfertaPack;
 import com.sazloop.ofertas.domain.VariantePack;
 import com.sazloop.ofertas.dto.OfertaResponse;
 import com.sazloop.ofertas.repository.OfertaPackRepository;
+import com.sazloop.shared.Tiempo;
+import com.sazloop.reservas.domain.DetalleReserva;
 import com.sazloop.reservas.domain.Reserva;
 import com.sazloop.reservas.repository.ReservaRepository;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,6 @@ import java.util.List;
 
 @Service
 public class PanelLocalService {
-    private static final ZoneId LIMA = ZoneId.of("America/Lima");
     private final OfertaService servicioOfertas;
     private final OfertaPackRepository ofertas;
     private final ReservaRepository reservas;
@@ -38,8 +39,8 @@ public class PanelLocalService {
         Long localId = cuenta.getEstablecimiento().getId();
         List<OfertaPack> publicaciones = ofertas.findByPackSorpresa_Establecimiento_Id(localId);
         List<Reserva> pedidos = reservas.findByOferta_PackSorpresa_Establecimiento_Id(localId);
-        LocalDate hoy = LocalDate.now(LIMA);
-        LocalDateTime ahora = LocalDateTime.now(LIMA);
+        LocalDate hoy = Tiempo.hoy();
+        LocalDateTime ahora = Tiempo.ahora();
         OfertaResponse vigente = servicioOfertas.vigente(cuenta).orElse(null);
         int stock = vigente == null ? 0 : vigente.variantes().stream()
                 .mapToInt(OfertaResponse.Variante::stockDisponible).sum();
@@ -70,7 +71,7 @@ public class PanelLocalService {
                 .map(pedido -> pedido.getPago().getComision().getImporteComision())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         int unidadesEntregadas = entregados.stream()
-                .flatMap(pedido -> pedido.getDetalles().stream()).mapToInt(d -> d.getCantidad()).sum();
+                .flatMap(pedido -> pedido.getDetalles().stream()).mapToInt(DetalleReserva::getCantidad).sum();
         int noVendidas = publicaciones.stream()
                 .filter(oferta -> !oferta.getFinRecojo().isAfter(ahora))
                 .filter(oferta -> !oferta.getFechaOferta().isBefore(inicio))

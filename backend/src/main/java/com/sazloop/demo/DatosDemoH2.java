@@ -1,5 +1,6 @@
 package com.sazloop.demo;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.afiliacion.domain.AdministradorPlataforma;
 import com.sazloop.afiliacion.domain.DocumentoEstablecimiento.TipoDocumento;
 import com.sazloop.afiliacion.domain.EvaluacionAfiliacion.DecisionAfiliacion;
@@ -35,6 +36,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
@@ -75,9 +77,9 @@ public class DatosDemoH2 {
                     "Av. José Larco", "1280", "-12.1219", "-77.0297");
             solicitud(solicitudes, aurora, sanBorja, documento); // Queda EN_REVISION, sin cuenta ni oferta.
             aprobar(solicitudes, revisiones, aurora, miraflores, documento, admin);
-            publicar(cuentas, ofertas, aurora, miraflores, "demo.miraflores", "Panes del Día",
+            publicar(cuentas, ofertas, aurora, miraflores, new PackDemo("demo.miraflores", "Panes del Día",
                     "Panes y productos preparados que no se vendieron durante el día.",
-                    "Podría incluir panes, empanadas o bocaditos.", "24.00", "14.00", 8);
+                    "Podría incluir panes, empanadas o bocaditos.", "24.00", "14.00", 8));
 
             Long oriente = persona(registros, "Mario", "Salazar", "dueno.oriente@sazloop.test");
             empresas.registrarEmpresa(oriente, new EmpresaRequest("Oriente Pan Demo S.A.C.",
@@ -85,9 +87,9 @@ public class DatosDemoH2 {
             Long ayllonUno = local(empresas, oriente, "Oriente Pan Ate", "Ate",
                     "Av. Nicolás Ayllón", "5000", "-12.0409", "-76.9582");
             aprobar(solicitudes, revisiones, oriente, ayllonUno, documento, admin);
-            publicar(cuentas, ofertas, oriente, ayllonUno, "demo.ayllon1", "Merienda Sorpresa",
+            publicar(cuentas, ofertas, oriente, ayllonUno, new PackDemo("demo.ayllon1", "Merienda Sorpresa",
                     "Pack de excedentes de panadería aptos para consumo.",
-                    "Podría incluir panes, pasteles o bocaditos.", "20.00", "11.00", 10);
+                    "Podría incluir panes, pasteles o bocaditos.", "20.00", "11.00", 10));
 
             Long sazon = persona(registros, "Elena", "Rojas", "duena.sazon@sazloop.test");
             empresas.registrarEmpresa(sazon, new EmpresaRequest("Sazón Urbano Demo S.A.C.",
@@ -95,9 +97,9 @@ public class DatosDemoH2 {
             Long ayllonDos = local(empresas, sazon, "Sazón Urbano Ate", "Ate",
                     "Av. Nicolás Ayllón", "6000", "-12.0390", "-76.9305");
             aprobar(solicitudes, revisiones, sazon, ayllonDos, documento, admin);
-            publicar(cuentas, ofertas, sazon, ayllonDos, "demo.ayllon2", "Almuerzo del Día",
+            publicar(cuentas, ofertas, sazon, ayllonDos, new PackDemo("demo.ayllon2", "Almuerzo del Día",
                     "Comida preparada del día que quedó disponible para su aprovechamiento.",
-                    "Podría incluir un plato de fondo y un acompañamiento.", "30.00", "18.00", 6);
+                    "Podría incluir un plato de fondo y un acompañamiento.", "30.00", "18.00", 6));
 
             consumidor(registros, usuarios, consumidores, "Valeria", "Quispe", "demo.consumidor1@sazloop.test");
             consumidor(registros, usuarios, consumidores, "Diego", "Flores", "demo.consumidor2@sazloop.test");
@@ -140,18 +142,27 @@ public class DatosDemoH2 {
                 new DecisionRequest(DecisionAfiliacion.APROBADA, "Aprobación simulada para la demostración"));
     }
 
+    /** Datos de un pack de demostración con su única variante mediana. */
+    private record PackDemo(String usuario, String nombre, String descripcion, String posibles,
+            String referencial, String descuento, int stock) {}
+
     private static void publicar(CuentaLocalService cuentas, OfertaService ofertas, Long dueno,
-            Long local, String usuario, String nombre, String descripcion, String posibles,
-            String referencial, String descuento, int stock) {
-        CuentaEstablecimiento cuenta = cuentas.crear(dueno, local, new CuentaLocalRequest(usuario, CLAVE));
-        LocalDateTime ahora = LocalDateTime.now();
+            Long local, PackDemo pack) {
+        CuentaEstablecimiento cuenta = cuentas.crear(dueno, local, new CuentaLocalRequest(pack.usuario(), CLAVE));
+        LocalDateTime ahora = Tiempo.ahora();
         ofertas.crearYPublicar(cuenta, new PublicacionRequest(
-                new PackRequest(nombre, descripcion, posibles, List.of(), List.of()),
+                new PackRequest(pack.nombre(), pack.descripcion(), pack.posibles(), List.of(), List.of()),
                 ahora, ahora.plusHours(8), List.of(new OfertaRequest.VarianteRequest(
-                TamanioVariante.MEDIANO, new BigDecimal(referencial), new BigDecimal(descuento), stock))));
+                TamanioVariante.MEDIANO, new BigDecimal(pack.referencial()), new BigDecimal(pack.descuento()),
+                pack.stock()))));
     }
 
     private record DocumentoPrueba(byte[] contenido) implements MultipartFile {
+        @Override public boolean equals(Object otro) {
+            return otro instanceof DocumentoPrueba documento && Arrays.equals(contenido, documento.contenido);
+        }
+        @Override public int hashCode() { return Arrays.hashCode(contenido); }
+        @Override public String toString() { return "DocumentoPrueba[contenido=" + contenido.length + " bytes]"; }
         @Override public String getName() { return "archivo"; }
         @Override public String getOriginalFilename() { return "PRUEBA.pdf"; }
         @Override public String getContentType() { return "application/pdf"; }

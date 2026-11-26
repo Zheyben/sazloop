@@ -1,5 +1,6 @@
 package com.sazloop;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.afiliacion.domain.AdministradorPlataforma;
 import com.sazloop.afiliacion.domain.DocumentoEstablecimiento.TipoDocumento;
 import com.sazloop.afiliacion.domain.RevisionDocumento.ResultadoRevision;
@@ -60,7 +61,7 @@ class PortalEmpresaEtapasTests {
 
         var preparada = solicitudes.adjuntar(propietario, local, TipoDocumento.CERTIFICADO_SANITARIO, null, null, null, archivo());
         solicitudes.adjuntar(propietario, local, TipoDocumento.LICENCIA_FUNCIONAMIENTO, null, null,
-                LocalDate.now().plusYears(1), archivo());
+                Tiempo.hoy().plusYears(1), archivo());
         consultar(propietario, local, "documentos adjuntos");
 
         solicitudes.enviar(propietario, local);

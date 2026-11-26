@@ -18,7 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /** Prepara y envía la documentación de un establecimiento para revisión manual. */
@@ -180,6 +182,21 @@ public class SolicitudAfiliacionService {
         return valor == null || valor.isBlank() ? null : valor.trim();
     }
 
+    /** Contenido de un documento privado. Compara y resume el arreglo por su contenido, no por referencia. */
     public record ArchivoPrivado(byte[] contenido, String extension) {
+        @Override public boolean equals(Object otro) {
+            return otro instanceof ArchivoPrivado archivo
+                    && Arrays.equals(contenido, archivo.contenido)
+                    && Objects.equals(extension, archivo.extension);
+        }
+
+        @Override public int hashCode() {
+            return 31 * Arrays.hashCode(contenido) + Objects.hashCode(extension);
+        }
+
+        @Override public String toString() {
+            return "ArchivoPrivado[contenido=" + (contenido == null ? 0 : contenido.length)
+                    + " bytes, extension=" + extension + "]";
+        }
     }
 }

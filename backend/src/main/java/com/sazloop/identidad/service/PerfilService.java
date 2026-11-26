@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 
 @Service
 public class PerfilService {
@@ -77,7 +79,21 @@ public class PerfilService {
         return new Foto(usuario.getFotoPerfilTipo(), usuario.getFotoPerfil());
     }
 
-    public record Foto(String tipo, byte[] contenido) {}
+    /** Foto de perfil. Compara y resume el arreglo por su contenido, no por referencia. */
+    public record Foto(String tipo, byte[] contenido) {
+        @Override public boolean equals(Object otra) {
+            return otra instanceof Foto foto
+                    && Objects.equals(tipo, foto.tipo) && Arrays.equals(contenido, foto.contenido);
+        }
+
+        @Override public int hashCode() {
+            return 31 * Objects.hashCode(tipo) + Arrays.hashCode(contenido);
+        }
+
+        @Override public String toString() {
+            return "Foto[tipo=" + tipo + ", contenido=" + (contenido == null ? 0 : contenido.length) + " bytes]";
+        }
+    }
 
     private Usuario usuario(Long id) {
         return usuarios.findById(id).filter(Usuario::isActivo)

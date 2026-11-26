@@ -1,5 +1,6 @@
 package com.sazloop.afiliacion.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.Establecimiento;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -30,7 +31,7 @@ public class SuspensionEstablecimiento {
 
     @Builder.Default
     @Column(name = "fecha_inicio", nullable = false, updatable = false)
-    private LocalDateTime fechaInicio = LocalDateTime.now();
+    private LocalDateTime fechaInicio = Tiempo.ahora();
 
     @Column(name = "fecha_fin")
     private LocalDateTime fechaFin;

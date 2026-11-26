@@ -1,5 +1,6 @@
 package com.sazloop.identidad.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -45,7 +46,7 @@ public class Establecimiento {
 
     @Builder.Default
     @Column(name = "fecha_registro", nullable = false, updatable = false)
-    private LocalDateTime fechaRegistro = LocalDateTime.now();
+    private LocalDateTime fechaRegistro = Tiempo.ahora();
 
     public enum EstadoEstablecimiento {
         PENDIENTE_APROBACION, ACTIVO, SUSPENDIDO, INACTIVO

@@ -1,5 +1,6 @@
 package com.sazloop;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.afiliacion.controller.AdministradorSesionController;
 import com.sazloop.afiliacion.domain.AdministradorPlataforma;
 import com.sazloop.afiliacion.domain.DocumentoEstablecimiento.TipoDocumento;
@@ -100,7 +101,7 @@ class ResolucionYSesionesTests {
 
         // Con documentos nuevos el propietario presenta otra solicitud y la aprobación es de un solo paso.
         var segunda = solicitudes.adjuntar(propietario, local, TipoDocumento.LICENCIA_FUNCIONAMIENTO, "L-1",
-                null, LocalDate.now().plusYears(1), archivo());
+                null, Tiempo.hoy().plusYears(1), archivo());
         solicitudes.enviar(propietario, local);
         var aprobada = revision.resolver(admin, segunda.id(), new ResolucionRequest(List.of(
                 new ResolucionRequest.Documento(segunda.documentos().getFirst().id(), ResultadoRevision.APROBADO, null)), null));
@@ -125,9 +126,9 @@ class ResolucionYSesionesTests {
         var variante = new OfertaRequest.VarianteRequest(VariantePack.TamanioVariante.PEQUENO,
                 new BigDecimal("20.00"), new BigDecimal("10.00"), 4);
         assertThrows(ResponseStatusException.class, () -> ofertas.crearYPublicar(cuenta, new PublicacionRequest(
-                pack, LocalDateTime.now().minusMinutes(10), LocalDateTime.now().plusHours(2), List.of(variante))));
+                pack, Tiempo.ahora().minusMinutes(10), Tiempo.ahora().plusHours(2), List.of(variante))));
         OfertaResponse oferta = ofertas.crearYPublicar(cuenta, new PublicacionRequest(
-                pack, LocalDateTime.now(), LocalDateTime.now().plusHours(2), List.of(variante)));
+                pack, Tiempo.ahora(), Tiempo.ahora().plusHours(2), List.of(variante)));
 
         Long consumidor = usuario();
         CompraResponse compra = compras.comprar(consumidor, new CompraRequest(oferta.id(), Pago.MedioPago.YAPE,
@@ -178,7 +179,7 @@ class ResolucionYSesionesTests {
         Long local = empresas.registrarEstablecimiento(propietario, new EstablecimientoRequest(nombre, null, null,
                 new DireccionRequest("Lima", "Lima", "Surquillo", "Calle Cinco", null, null, null))).id();
         solicitudes.adjuntar(propietario, local, TipoDocumento.CERTIFICADO_SANITARIO, "CS-9",
-                null, LocalDate.now().plusYears(1), archivo());
+                null, Tiempo.hoy().plusYears(1), archivo());
         solicitudes.enviar(propietario, local);
         return local;
     }

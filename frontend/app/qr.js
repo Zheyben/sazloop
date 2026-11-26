@@ -80,8 +80,6 @@ function actualizarTotal() {
 function actualizarPago() {
   const medio = form.elements.medioPago.value;
   validado = medio === 'EFECTIVO';
-  for (const boton of document.querySelectorAll('#metodosQr .carrito-metodo'))
-    boton.setAttribute('aria-checked', String(boton.dataset.valor === medio));
   form.elements.terminos.checked = false;
   document.querySelector('#confirmarQr').disabled = true;
   for (const [id, activo] of [['yapeQr', medio === 'YAPE'], ['tarjetaQr', medio === 'TARJETA_DEBITO']]) {
@@ -99,13 +97,8 @@ function actualizarPago() {
 form.addEventListener('input', evento => {
   if (evento.target.name?.startsWith('v')) actualizarTotal();
 });
-form.elements.medioPago.addEventListener('change', actualizarPago);
-for (const boton of document.querySelectorAll('#metodosQr .carrito-metodo')) {
-  boton.addEventListener('click', () => {
-    if (form.elements.medioPago.value === boton.dataset.valor) return;
-    form.elements.medioPago.value = boton.dataset.valor;
-    form.elements.medioPago.dispatchEvent(new Event('change'));
-  });
+for (const radio of document.querySelectorAll('#metodosQr input[name="medioPago"]')) {
+  radio.addEventListener('change', actualizarPago);
 }
 form.elements.terminos.addEventListener('change', () => {
   document.querySelector('#confirmarQr').disabled = !validado || !form.elements.terminos.checked;
@@ -117,7 +110,7 @@ function avisoQr(texto, error = false) {
   else notificarBreve('success', texto);
 }
 document.querySelector('#siguienteYapeQr').addEventListener('click', () => {
-  if (!/^9[0-9]{8}$/.test(form.elements.telefonoYape.value.trim())) {
+  if (!/^9\d{8}$/.test(form.elements.telefonoYape.value.trim())) {
     avisoQr('Ingresa un número peruano que empiece por 9.', true);
     return;
   }
@@ -126,7 +119,7 @@ document.querySelector('#siguienteYapeQr').addEventListener('click', () => {
   mensaje.textContent = '';
 });
 document.querySelector('#validarYapeQr').addEventListener('click', () => {
-  if (!/^[0-9]{6}$/.test(form.elements.codigoYape.value.trim())) {
+  if (!/^\d{6}$/.test(form.elements.codigoYape.value.trim())) {
     avisoQr('Ingresa seis dígitos.', true);
     return;
   }
@@ -141,7 +134,7 @@ document.querySelector('#validarTarjetaQr').addEventListener('click', () => {
   const titular = form.elements.titular.value.trim();
   const vencimiento = form.elements.vencimiento.value;
   const cvv = form.elements.cvv.value.trim();
-  if (!/^[0-9]{13,19}$/.test(numero) || !titular || !tarjetaVigente(vencimiento) || !/^[0-9]{3,4}$/.test(cvv)) {
+  if (!/^\d{13,19}$/.test(numero) || !titular || !tarjetaVigente(vencimiento) || !/^\d{3,4}$/.test(cvv)) {
     avisoQr('Revisa el número, titular, vencimiento y CVV o CVC.', true);
     return;
   }
@@ -193,4 +186,4 @@ form.addEventListener('submit', async evento => {
   }
 });
 
-iniciar();
+await iniciar();

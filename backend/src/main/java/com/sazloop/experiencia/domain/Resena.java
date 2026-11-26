@@ -1,5 +1,6 @@
 package com.sazloop.experiencia.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.Consumidor;
 import com.sazloop.identidad.domain.Establecimiento;
 import com.sazloop.reservas.domain.Reserva;
@@ -41,7 +42,7 @@ public class Resena {
 
     @Builder.Default
     @Column(name = "fecha_publicacion", nullable = false, updatable = false)
-    private LocalDateTime fechaPublicacion = LocalDateTime.now();
+    private LocalDateTime fechaPublicacion = Tiempo.ahora();
 
     @Builder.Default @Column(nullable = false)
     private boolean visible = true;

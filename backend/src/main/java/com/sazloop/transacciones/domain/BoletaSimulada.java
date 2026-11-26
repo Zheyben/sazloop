@@ -1,5 +1,6 @@
 package com.sazloop.transacciones.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.reservas.domain.Reserva;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
@@ -34,7 +35,7 @@ public class BoletaSimulada {
 
     @Builder.Default
     @Column(name = "fecha_emision", nullable = false, updatable = false)
-    private LocalDateTime fechaEmision = LocalDateTime.now();
+    private LocalDateTime fechaEmision = Tiempo.ahora();
 
     @Builder.Default
     @Column(name = "mensaje_legal", nullable = false, length = 150)

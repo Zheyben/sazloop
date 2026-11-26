@@ -17,6 +17,7 @@ public class AvisosReservaService {
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
     private static final String REFERENCIA = "Reserva";
+    private static final String A_LAS = " a las ";
     private final NotificacionService notificaciones;
 
     public AvisosReservaService(NotificacionService notificaciones) { this.notificaciones = notificaciones; }
@@ -58,7 +59,7 @@ public class AvisosReservaService {
         cerrarRecordatorio(reserva);
         if (reserva.esDelivery()) {
             avisar(reserva, TipoNotificacion.CAMBIO_RESERVA, "Pedido no entregado al repartidor: " + local(reserva),
-                    "El horario terminó el " + reserva.getOferta().getFinRecojo().format(FECHA) + " a las "
+                    "El horario terminó el " + reserva.getOferta().getFinRecojo().format(FECHA) + A_LAS
                             + reserva.getOferta().getFinRecojo().format(HORA)
                             + " y el local no lo entregó al repartidor a tiempo, así que el delivery con "
                             + reserva.getEmpresaDelivery().getNombre()
@@ -66,7 +67,7 @@ public class AvisosReservaService {
             return;
         }
         avisar(reserva, TipoNotificacion.CAMBIO_RESERVA, "Pedido no recogido: " + local(reserva),
-                "El horario de recojo terminó el " + reserva.getOferta().getFinRecojo().format(FECHA) + " a las "
+                "El horario de recojo terminó el " + reserva.getOferta().getFinRecojo().format(FECHA) + A_LAS
                         + reserva.getOferta().getFinRecojo().format(HORA)
                         + " sin entrega. El código ya no es válido y el importe pagado no se reembolsa.");
     }
@@ -88,7 +89,7 @@ public class AvisosReservaService {
     private static String rango(LocalDateTime inicio, LocalDateTime fin) {
         if (inicio.toLocalDate().equals(fin.toLocalDate()))
             return "el " + inicio.format(FECHA) + " de " + inicio.format(HORA) + " a " + fin.format(HORA);
-        return "del " + inicio.format(FECHA) + " a las " + inicio.format(HORA)
-                + " al " + fin.format(FECHA) + " a las " + fin.format(HORA);
+        return "del " + inicio.format(FECHA) + A_LAS + inicio.format(HORA)
+                + " al " + fin.format(FECHA) + A_LAS + fin.format(HORA);
     }
 }

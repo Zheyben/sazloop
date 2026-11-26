@@ -1,5 +1,6 @@
 package com.sazloop.afiliacion.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -31,7 +32,7 @@ public class EvaluacionAfiliacion {
 
     @Builder.Default
     @Column(name = "fecha_resolucion", nullable = false, updatable = false)
-    private LocalDateTime fechaResolucion = LocalDateTime.now();
+    private LocalDateTime fechaResolucion = Tiempo.ahora();
 
     public enum DecisionAfiliacion { APROBADA, RECHAZADA }
 }

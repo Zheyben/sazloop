@@ -1,5 +1,6 @@
 package com.sazloop.transacciones.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.reservas.domain.Reserva;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
@@ -42,7 +43,7 @@ public class CancelacionReserva {
 
     @Builder.Default
     @Column(name = "fecha_cancelacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCancelacion = LocalDateTime.now();
+    private LocalDateTime fechaCancelacion = Tiempo.ahora();
 
     @OneToOne(mappedBy = "cancelacion", fetch = FetchType.LAZY,
             cascade = CascadeType.ALL, orphanRemoval = true)

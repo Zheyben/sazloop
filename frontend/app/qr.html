@@ -6,7 +6,7 @@
   <title>Sazloop | Compra presencial</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="portal.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.26/dist/sweetalert2.all.min.js" integrity="sha384-YSynQEAHJheMtXcWX0UbcX9moVoO5lqUapIunmQ0nJIYuYW3CdpHh4ckF/Loiasx" crossorigin="anonymous"></script>
   <script type="module" src="qr.js"></script>
 </head>
 <body class="pagina-qr">
@@ -31,15 +31,10 @@
 
       <fieldset class="qr-grupo">
         <legend>Medio de pago</legend>
-        <select name="medioPago" hidden tabindex="-1">
-          <option value="YAPE">Yape</option>
-          <option value="TARJETA_DEBITO">Tarjeta de débito</option>
-          <option value="EFECTIVO">Efectivo en el establecimiento</option>
-        </select>
-        <div id="metodosQr" class="carrito-metodos tres" role="radiogroup" aria-label="Medio de pago">
-          <button type="button" class="carrito-metodo" role="radio" aria-checked="true" data-valor="YAPE"><strong>Yape</strong><small>Con tu celular</small></button>
-          <button type="button" class="carrito-metodo" role="radio" aria-checked="false" data-valor="TARJETA_DEBITO"><strong>Tarjeta de débito</strong><small>Con tu tarjeta</small></button>
-          <button type="button" class="carrito-metodo" role="radio" aria-checked="false" data-valor="EFECTIVO"><strong>Efectivo</strong><small>Pagas al trabajador</small></button>
+        <div id="metodosQr" class="carrito-metodos tres">
+          <label class="carrito-metodo"><input type="radio" name="medioPago" value="YAPE" checked><strong>Yape</strong><small>Con tu celular</small></label>
+          <label class="carrito-metodo"><input type="radio" name="medioPago" value="TARJETA_DEBITO"><strong>Tarjeta de débito</strong><small>Con tu tarjeta</small></label>
+          <label class="carrito-metodo"><input type="radio" name="medioPago" value="EFECTIVO"><strong>Efectivo</strong><small>Pagas al trabajador</small></label>
         </div>
 
         <fieldset id="yapeQr" class="qr-subgrupo">
@@ -66,7 +61,7 @@
 
       <label class="carrito-terminos"><input name="terminos" type="checkbox" required> Acepto los <a href="terminos.html" target="_blank" rel="noopener">términos y condiciones</a>.</label>
       <button id="confirmarQr" type="submit" disabled>Confirmar compra</button>
-      <p id="mensajeQr" role="status" aria-live="polite"></p>
+      <output id="mensajeQr" aria-live="polite"></output>
     </form>
     <section id="resultadoQr" aria-live="polite"></section>
   </main>

@@ -6,7 +6,7 @@
   <title>Sazloop | Ingreso de administración</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="accesos.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.26/dist/sweetalert2.all.min.js" integrity="sha384-YSynQEAHJheMtXcWX0UbcX9moVoO5lqUapIunmQ0nJIYuYW3CdpHh4ckF/Loiasx" crossorigin="anonymous"></script>
   <script type="module" src="accesos.js"></script>
 </head>
 <body data-acceso="administrador">
@@ -24,7 +24,7 @@
       <div class="formulario-contenido">
         <p class="etiqueta">ACCESO DE ADMINISTRACIÓN</p>
         <h2 id="titulo-formulario">Iniciar sesión</h2>
-        <p id="mensaje-acceso" role="status" aria-live="polite"></p>
+        <output id="mensaje-acceso" aria-live="polite"></output>
         <form id="ingreso-administrador" class="formulario-acceso">
           <label>Correo institucional <input name="email" type="email" autocomplete="username" required></label>
           <label>Contraseña <input name="contrasena" type="password" autocomplete="current-password" required></label>

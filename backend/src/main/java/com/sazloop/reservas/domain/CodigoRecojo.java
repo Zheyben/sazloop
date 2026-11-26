@@ -1,5 +1,6 @@
 package com.sazloop.reservas.domain;
 
+import com.sazloop.shared.Tiempo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -30,7 +31,7 @@ public class CodigoRecojo {
 
     @Builder.Default
     @Column(name = "fecha_generacion", nullable = false, updatable = false)
-    private LocalDateTime fechaGeneracion = LocalDateTime.now();
+    private LocalDateTime fechaGeneracion = Tiempo.ahora();
 
     @Column(name = "fecha_uso")
     private LocalDateTime fechaUso;

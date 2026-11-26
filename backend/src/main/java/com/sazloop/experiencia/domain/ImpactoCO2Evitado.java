@@ -1,5 +1,6 @@
 package com.sazloop.experiencia.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.reservas.domain.Recojo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
@@ -40,6 +41,6 @@ public class ImpactoCO2Evitado {
 
     @Builder.Default
     @Column(name = "fecha_registro", nullable = false, updatable = false)
-    private LocalDateTime fechaRegistro = LocalDateTime.now();
+    private LocalDateTime fechaRegistro = Tiempo.ahora();
 }
 

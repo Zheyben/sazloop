@@ -38,14 +38,29 @@ public class IndicadoresEmpresaService {
                     resenas.findByEstablecimiento_IdAndVisibleTrue(local.id()),
                     impactos.findByLocal(local.id())));
         }
-        int ventas = 0, cancelaciones = 0, noRecogidas = 0, entregados = 0, numResenas = 0;
-        BigDecimal importeVentas = BigDecimal.ZERO, comisiones = BigDecimal.ZERO,
-                ingresos = BigDecimal.ZERO, sumaNotas = BigDecimal.ZERO,
-                kilos = BigDecimal.ZERO, co2 = BigDecimal.ZERO;
+        return new Resumen(locales, consolidar(locales));
+    }
+
+    /** Suma los indicadores de todos los locales en una sola fila «Total empresa». */
+    private Indicadores consolidar(List<Indicadores> locales) {
+        int ventas = 0;
+        int cancelaciones = 0;
+        int noRecogidas = 0;
+        int entregados = 0;
+        int numResenas = 0;
+        BigDecimal importeVentas = BigDecimal.ZERO;
+        BigDecimal comisiones = BigDecimal.ZERO;
+        BigDecimal ingresos = BigDecimal.ZERO;
+        BigDecimal sumaNotas = BigDecimal.ZERO;
+        BigDecimal kilos = BigDecimal.ZERO;
+        BigDecimal co2 = BigDecimal.ZERO;
         for (Indicadores local : locales) {
-            kilos = kilos.add(local.alimentoRecuperadoKg()); co2 = co2.add(local.co2EvitadoKg());
-            ventas += local.ventas(); cancelaciones += local.cancelaciones();
-            noRecogidas += local.noRecogidas(); entregados += local.packsEntregados();
+            kilos = kilos.add(local.alimentoRecuperadoKg());
+            co2 = co2.add(local.co2EvitadoKg());
+            ventas += local.ventas();
+            cancelaciones += local.cancelaciones();
+            noRecogidas += local.noRecogidas();
+            entregados += local.packsEntregados();
             numResenas += local.cantidadResenas();
             importeVentas = importeVentas.add(local.importeVentas());
             comisiones = comisiones.add(local.comisiones());
@@ -53,23 +68,52 @@ public class IndicadoresEmpresaService {
             sumaNotas = sumaNotas.add(local.calificacionPromedio()
                     .multiply(BigDecimal.valueOf(local.cantidadResenas())));
         }
-        return new Resumen(locales, new Indicadores(null, "Total empresa", ventas,
+        return new Indicadores(null, "Total empresa", ventas,
                 importeVentas, comisiones, ingresos, cancelaciones, noRecogidas,
-                numResenas, promedio(sumaNotas, numResenas), entregados, kilos, co2, List.of()));
+                numResenas, promedio(sumaNotas, numResenas), entregados, kilos, co2, List.of());
     }
 
     private Indicadores calcular(Long id, String nombre, List<Reserva> pedidos, List<Resena> opiniones,
             List<ImpactoCO2Evitado> entregas) {
-        int ventas = 0, cancelaciones = 0, noRecogidas = 0, entregados = 0;
-        BigDecimal importeVentas = BigDecimal.ZERO, comisiones = BigDecimal.ZERO,
-                ingresos = BigDecimal.ZERO, sumaNotas = BigDecimal.ZERO;
-        for (Reserva pedido : pedidos) {
+        TotalesVentas totales = new TotalesVentas();
+        pedidos.forEach(totales::registrar);
+        // Los registros antiguos, con valores vacíos, cuentan como 0.
+        BigDecimal kilos = BigDecimal.ZERO;
+        BigDecimal co2 = BigDecimal.ZERO;
+        for (ImpactoCO2Evitado entrega : entregas) {
+            kilos = kilos.add(valorOCero(entrega.getAlimentoRecuperadoKg()));
+            co2 = co2.add(valorOCero(entrega.getCo2EvitadoKg()));
+        }
+        BigDecimal sumaNotas = BigDecimal.ZERO;
+        for (Resena opinion : opiniones)
+            sumaNotas = sumaNotas.add(BigDecimal.valueOf(opinion.getCalificacion()));
+        return new Indicadores(id, nombre, totales.ventas, totales.importeVentas, totales.comisiones,
+                totales.ingresos, totales.cancelaciones, totales.noRecogidas, opiniones.size(),
+                promedio(sumaNotas, opiniones.size()), totales.entregados, kilos, co2, recientes(opiniones));
+    }
+
+    private static BigDecimal valorOCero(BigDecimal valor) {
+        return valor == null ? BigDecimal.ZERO : valor;
+    }
+
+    /** Acumula, pedido por pedido, las cifras de venta de un local. */
+    private static final class TotalesVentas {
+        private int ventas;
+        private int cancelaciones;
+        private int noRecogidas;
+        private int entregados;
+        private BigDecimal importeVentas = BigDecimal.ZERO;
+        private BigDecimal comisiones = BigDecimal.ZERO;
+        private BigDecimal ingresos = BigDecimal.ZERO;
+
+        void registrar(Reserva pedido) {
             Pago pago = pedido.getPago();
             boolean pagado = pago != null && pago.getEstado() == Pago.EstadoPago.CONFIRMADO;
-            if (pedido.getEstado() == Reserva.EstadoReserva.CANCELADA) cancelaciones++;
+            boolean cancelada = pedido.getEstado() == Reserva.EstadoReserva.CANCELADA;
+            if (cancelada) cancelaciones++;
             if (pedido.getEstado() == Reserva.EstadoReserva.EXPIRADA && pagado) noRecogidas++;
-            if (!pagado) continue;
-            if (pedido.getEstado() != Reserva.EstadoReserva.CANCELADA) {
+            if (!pagado) return;
+            if (!cancelada) {
                 ventas++;
                 importeVentas = importeVentas.add(pedido.getMontoTotal());
             }
@@ -81,17 +125,6 @@ public class IndicadoresEmpresaService {
             if (pedido.getEstado() == Reserva.EstadoReserva.RECOGIDA)
                 entregados += pedido.getDetalles().stream().mapToInt(DetalleReserva::getCantidad).sum();
         }
-        // Los registros antiguos, con valores vacíos, cuentan como 0.
-        BigDecimal kilos = BigDecimal.ZERO, co2 = BigDecimal.ZERO;
-        for (ImpactoCO2Evitado entrega : entregas) {
-            if (entrega.getAlimentoRecuperadoKg() != null) kilos = kilos.add(entrega.getAlimentoRecuperadoKg());
-            if (entrega.getCo2EvitadoKg() != null) co2 = co2.add(entrega.getCo2EvitadoKg());
-        }
-        for (Resena opinion : opiniones)
-            sumaNotas = sumaNotas.add(BigDecimal.valueOf(opinion.getCalificacion()));
-        return new Indicadores(id, nombre, ventas, importeVentas, comisiones, ingresos,
-                cancelaciones, noRecogidas, opiniones.size(), promedio(sumaNotas, opiniones.size()), entregados,
-                kilos, co2, recientes(opiniones));
     }
 
     /** Las cinco reseñas más recientes de un local, con su comentario. */

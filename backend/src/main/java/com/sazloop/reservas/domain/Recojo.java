@@ -1,5 +1,6 @@
 package com.sazloop.reservas.domain;
 
+import com.sazloop.shared.Tiempo;
 import com.sazloop.identidad.domain.CuentaEstablecimiento;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
@@ -25,7 +26,7 @@ public class Recojo {
 
     @Builder.Default
     @Column(name = "fecha_recojo", nullable = false, updatable = false)
-    private LocalDateTime fechaRecojo = LocalDateTime.now();
+    private LocalDateTime fechaRecojo = Tiempo.ahora();
 
     @Size(max = 300) @Column(length = 300)
     private String observaciones;
