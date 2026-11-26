@@ -72,13 +72,13 @@ async function errorDeRespuesta(respuesta) {
 /** Alerta según el tipo de fallo: sin conexión, credenciales, cuenta repetida u otro error. */
 function notificarFallo(error, ruta) {
   if (esFalloDeRed(error)) {
-    notificar({
+    void notificar({
       icon: 'error',
       title: 'Sin conexión',
       text: 'Parece que no tienes internet. Revisa tu conexión y vuelve a intentarlo.'
     });
   } else if (ruta.endsWith('/sesion')) {
-    notificar({
+    void notificar({
       icon: 'error',
       title: 'No pudimos iniciar sesión',
       text: error.status === 401
@@ -86,13 +86,13 @@ function notificarFallo(error, ruta) {
         : error.message
     });
   } else if (error.status === 409) {
-    notificar({
+    void notificar({
       icon: 'warning',
       title: 'Esta cuenta ya existe',
       text: 'Ese correo ya está registrado. Inicia sesión o usa otro correo.'
     });
   } else {
-    notificar({
+    void notificar({
       icon: error.status === 400 ? 'warning' : 'error',
       title: 'No se pudo crear la cuenta',
       text: error.message
@@ -120,7 +120,7 @@ async function enviar(formulario, ruta, destino) {
       vistaRegistro(false);
       ingresoPersonal.elements.email.value = correo;
       aviso('Cuenta creada. Ya puedes iniciar sesión.');
-      notificarExito('Cuenta creada', 'Ya puedes iniciar sesión con el correo que registraste.');
+      void notificarExito('Cuenta creada', 'Ya puedes iniciar sesión con el correo que registraste.');
     }
   } catch (error) {
     aviso(esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message, true);
@@ -137,19 +137,19 @@ ingresoPersonal?.addEventListener('submit', evento => {
     const url = new URL(continuar, location.origin);
     if (url.origin === location.origin && url.pathname === '/app/qr.html') destino = url.pathname + url.search;
   }
-  enviar(ingresoPersonal, '/api/sesion', rol === 'empresa' ? 'empresa.html' : destino);
+  void enviar(ingresoPersonal, '/api/sesion', rol === 'empresa' ? 'empresa.html' : destino);
 });
 registroPersonal?.addEventListener('submit', evento => {
   evento.preventDefault();
-  enviar(registroPersonal, '/api/usuarios', null);
+  void enviar(registroPersonal, '/api/usuarios', null);
 });
 ingresoTrabajador?.addEventListener('submit', evento => {
   evento.preventDefault();
-  enviar(ingresoTrabajador, '/api/local/sesion', 'trabajador.html');
+  void enviar(ingresoTrabajador, '/api/local/sesion', 'trabajador.html');
 });
 ingresoAdmin?.addEventListener('submit', evento => {
   evento.preventDefault();
-  enviar(ingresoAdmin, '/api/administradores/sesion', 'administrador.html');
+  void enviar(ingresoAdmin, '/api/administradores/sesion', 'administrador.html');
 });
 
 document.querySelector('#ir-registro a')?.addEventListener('click', evento => {

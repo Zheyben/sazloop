@@ -128,7 +128,7 @@ export async function iniciarPortal(activa) {
         location.href = 'acceso-consumidor.html';
         return;
       }
-      notificarError(error, 'No se pudo cerrar la sesión');
+      void notificarError(error, 'No se pudo cerrar la sesión');
     }
   });
   document.addEventListener('click', e => { if (!perfil.contains(e.target)) perfil.open = false; });

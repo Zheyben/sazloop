@@ -60,14 +60,14 @@ export function mensaje(texto, esError = false, titulo) {
     zona.className = clase;
   }
   if (!texto) return;
-  if (esError) notificarError(texto, titulo);
-  else notificarExito(titulo || 'Listo', texto);
+  if (esError) void notificarError(texto, titulo);
+  else void notificarExito(titulo || 'Listo', texto);
 }
 
 export function estadoEn(zona, texto, esError = false, titulo) {
   zona.textContent = esFalloDeRed(texto) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : texto;
   zona.className = `estado-formulario ${esError ? 'error' : 'ok'}`;
-  if (texto && esError) notificarError(texto, titulo);
+  if (texto && esError) void notificarError(texto, titulo);
 }
 
 export function insignia(texto, tono = '') {

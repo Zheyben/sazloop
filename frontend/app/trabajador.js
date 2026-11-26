@@ -24,7 +24,7 @@ let packs = [];
 pintarIconos();
 const mostrarVista = crearNavegacion(vista => {
   if (vista === 'validar') document.querySelector('#form-codigo input').focus();
-  if (vista === 'vigente' && resumen) cargar();
+  if (vista === 'vigente' && resumen) void cargar();
 });
 
 try {
@@ -336,7 +336,7 @@ document.querySelector('#form-codigo').addEventListener('submit', async evento =
   evento.preventDefault();
   const codigo = evento.currentTarget.elements.codigo.value.trim().toUpperCase();
   if (!codigo) {
-    notificar({ icon: 'warning', title: 'Falta el código', text: 'Ingresa el código de recojo que te dicta el cliente.' });
+    void notificar({ icon: 'warning', title: 'Falta el código', text: 'Ingresa el código de recojo que te dicta el cliente.' });
     return;
   }
   resultado.replaceChildren(el('p', { className: 'nota', textContent: 'Buscando el pedido…' }));
@@ -344,13 +344,13 @@ document.querySelector('#form-codigo').addEventListener('submit', async evento =
     pintarCompra(await solicitar('/local/recojos/' + encodeURIComponent(codigo)), codigo);
   } catch (error) {
     if (error.status === 404) {
-      notificar({
+      void notificar({
         icon: 'warning',
         title: 'No encontramos ese código',
         text: 'Revisa que el cliente lo haya dictado completo y que corresponda a este local.'
       });
     } else {
-      notificarError(error, 'No se pudo consultar el código');
+      void notificarError(error, 'No se pudo consultar el código');
     }
     resultado.replaceChildren(bandaErrorCodigo(error));
   }

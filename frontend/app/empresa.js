@@ -36,7 +36,7 @@ function iniciarEmpresa() {
   document.querySelector('#titulo-panel').textContent = empresa.nombreComercial;
   document.title = `Sazloop | ${empresa.nombreComercial}`;
   lateral.hidden = false;
-  actualizarContador();
+  void actualizarContador();
   mostrar('resumen');
 }
 
@@ -432,6 +432,6 @@ function pintarContador(avisos) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || !empresa || vistaActual[0] === 'registro') return;
   if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
-  actualizarContador();
+  void actualizarContador();
   if (vistaActual[0] !== 'locales:detalle' || !detalle.querySelector('form')) mostrar(vistaActual[0], vistaActual[1]);
 });

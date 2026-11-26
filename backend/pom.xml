@@ -41,6 +41,17 @@
     -->
     <properties>
         <java.version>21</java.version>
+
+        <!--
+            SONARQUBE: analisis de calidad del backend.
+            Se ejecuta con: mvnw.cmd clean verify sonar:sonar -Dsonar.token=TU_TOKEN
+            La cobertura la lee del informe de JaCoCo (target/site/jacoco/jacoco.xml).
+        -->
+        <sonar.projectKey>grupo3-sazloop-backend</sonar.projectKey>
+        <sonar.projectName>GRUPO 3</sonar.projectName>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <jacoco.version>0.8.13</jacoco.version>
     </properties>
 
     <!--
@@ -191,6 +202,41 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <!--
+                JACOCO: mide que parte del codigo recorren las pruebas (cobertura).
+                prepare-agent: activa la medicion antes de correr las pruebas.
+                report: genera el informe en target/site/jacoco (HTML y XML para SonarQube).
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>preparar-cobertura</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>informe-cobertura</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--
+                SONAR MAVEN PLUGIN: envia el codigo, las pruebas y la cobertura a SonarQube.
+            -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>5.1.0.4751</version>
             </plugin>
 
         </plugins>

@@ -17,7 +17,7 @@ async function iniciar() {
   }
   if (!Number.isInteger(ofertaId) || ofertaId < 1 || !token) {
     zona.textContent = 'El enlace QR no es válido.';
-    notificar({
+    void notificar({
       icon: 'error',
       title: 'Enlace no válido',
       text: 'Este código QR no corresponde a una oferta de Sazloop.'
@@ -61,7 +61,7 @@ async function iniciar() {
     actualizarTotal();
   } catch (error) {
     zona.textContent = esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message;
-    notificarError(error, 'No se pudo abrir la oferta');
+    void notificarError(error, 'No se pudo abrir la oferta');
   }
 }
 
@@ -106,7 +106,7 @@ form.elements.terminos.addEventListener('change', () => {
 function avisoQr(texto, error = false) {
   mensaje.textContent = texto;
   if (!texto) return;
-  if (error) notificarError(texto, 'Revisa el pago');
+  if (error) void notificarError(texto, 'Revisa el pago');
   else notificarBreve('success', texto);
 }
 document.querySelector('#siguienteYapeQr').addEventListener('click', () => {
@@ -173,7 +173,7 @@ form.addEventListener('submit', async evento => {
       medioPago === 'EFECTIVO' ? el('p', { textContent: `La reserva vence: ${fechaHora(respuesta.venceEn)}` })
         : el('p', { textContent: `Boleta: ${respuesta.numeroBoleta}` }),
       el('a', { href: 'compras.html', textContent: 'Ver mis compras' }));
-    notificarExito(
+    void notificarExito(
       medioPago === 'EFECTIVO' ? 'Reserva lista' : 'Compra confirmada',
       medioPago === 'EFECTIVO'
         ? `Entrega el efectivo al trabajador. Tu código es ${respuesta.codigoRecojo}.`
@@ -181,7 +181,7 @@ form.addEventListener('submit', async evento => {
     );
   } catch (error) {
     mensaje.textContent = esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message;
-    notificarError(error, 'No se pudo confirmar la compra');
+    void notificarError(error, 'No se pudo confirmar la compra');
     boton.disabled = false;
   }
 });

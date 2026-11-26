@@ -43,7 +43,7 @@ export function montarPerfil(usuario) {
       mensaje.className = error ? 'error' : 'ok';
     }
     if (esFalloDeRed(texto)) {
-      notificar({
+      void notificar({
         icon: 'error',
         title: 'Sin conexión',
         text: 'Parece que no tienes internet. Revisa tu red y vuelve a intentarlo.'
@@ -52,14 +52,14 @@ export function montarPerfil(usuario) {
     }
     if (error) {
       const esAviso = /elige|revisa|ingresa|corta|mínimo|minimo/i.test(texto);
-      notificar({
+      void notificar({
         icon: esAviso ? 'warning' : 'error',
         title: titulo || (esAviso ? 'Revisa la información' : 'No se pudo guardar'),
         text: texto
       });
       return;
     }
-    notificarExito(titulo || 'Perfil actualizado', texto);
+    void notificarExito(titulo || 'Perfil actualizado', texto);
   }
 
   function mostrarFoto() {

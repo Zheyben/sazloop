@@ -2,7 +2,7 @@ import { solicitar, el, aviso } from './comun.js';
 import { actualizarCampana } from './portal.js';
 
 export function montarNotificaciones() {
-  cargar();
+  void cargar();
 }
 
 async function cargar() {

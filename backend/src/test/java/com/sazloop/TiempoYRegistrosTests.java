@@ -6,8 +6,8 @@ import com.sazloop.shared.Tiempo;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,8 +17,9 @@ class TiempoYRegistrosTests {
     @Test
     void elRelojUsaLaHoraDePeruSinImportarLaZonaDelServidor() {
         assertEquals(ZoneId.of("America/Lima"), Tiempo.ZONA);
-        LocalDateTime esperado = LocalDateTime.now(ZoneId.of("America/Lima"));
-        assertTrue(Duration.between(Tiempo.ahora(), esperado).abs().getSeconds() < 5);
+        ZonedDateTime esperado = ZonedDateTime.now(ZoneId.of("America/Lima"));
+        ZonedDateTime delSistema = Tiempo.ahora().atZone(Tiempo.ZONA);
+        assertTrue(Duration.between(delSistema, esperado).abs().getSeconds() < 5);
         assertEquals(esperado.toLocalDate(), Tiempo.hoy());
     }
 

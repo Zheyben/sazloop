@@ -163,8 +163,8 @@ export function aviso(texto, esError = false, titulo) {
     zona.className = esError ? 'error' : 'ok';
   }
   if (!texto) return;
-  if (esError) notificarError(texto, titulo);
-  else notificarExito(titulo || 'Listo', texto);
+  if (esError) void notificarError(texto, titulo);
+  else void notificarExito(titulo || 'Listo', texto);
 }
 
 // Una tarjeta sirve hasta el último día de su mes de vencimiento.

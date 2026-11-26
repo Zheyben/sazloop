@@ -19,7 +19,7 @@ let navegacion = 0;
 
 if (usuario) {
   vistas.get(paginaInicial)?.(usuario);
-  avisarResenasPendientes();
+  void avisarResenasPendientes();
 
   document.addEventListener('click', evento => {
     if (evento.defaultPrevented || evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
@@ -29,7 +29,7 @@ if (usuario) {
     const pagina = destino.pathname.split('/').pop();
     if (destino.origin !== location.origin || destino.pathname.slice(0, destino.pathname.lastIndexOf('/')) !== location.pathname.slice(0, location.pathname.lastIndexOf('/')) || !vistas.has(pagina)) return;
     evento.preventDefault();
-    if (destino.href !== location.href) navegar(destino, true);
+    if (destino.href !== location.href) void navegar(destino, true);
   });
 
   addEventListener('popstate', () => navegar(new URL(location.href), false));

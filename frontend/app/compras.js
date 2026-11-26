@@ -28,8 +28,8 @@ function etiquetaEstado(compra) {
 let usuario;
 export function montarCompras(usuarioActual) {
   usuario = usuarioActual;
-  mostrarCarrito();
-  mostrarHistorial();
+  mostrarCarrito().catch(error => void notificarError(error, 'No se pudo mostrar el carrito'));
+  void mostrarHistorial();
 }
 
 async function mostrarCarrito() {
@@ -59,7 +59,7 @@ async function mostrarCarrito() {
     const oferta = ofertas.get(pedido.ofertaId);
     const quitar = el('button', { type: 'button', className: 'secundario carrito-quitar', textContent: 'Quitar del carrito', onclick: () => {
       guardarCarrito(usuario.id, leerCarrito(usuario.id).filter(p => p.clave !== pedido.clave));
-      mostrarCarrito();
+      mostrarCarrito().catch(error => void notificarError(error, 'No se pudo mostrar el carrito'));
     } });
     if (!oferta) {
       noDisponibles = true;
@@ -226,7 +226,7 @@ async function mostrarCarrito() {
   function avisoPago(texto, error = false) {
     mensajePago.textContent = texto;
     if (!texto) return;
-    if (error) notificarError(texto, 'Revisa el pago');
+    if (error) void notificarError(texto, 'Revisa el pago');
     else notificarBreve('success', texto);
   }
   medio.addEventListener('change', resetPago);
@@ -307,7 +307,7 @@ async function mostrarCarrito() {
     if (!pagoValidado || !terminos.checked || !entregaValida()) return;
     const guardados = pedidoActualizado();
     if (!guardados) {
-      notificarError(mensaje.textContent || 'Revisa el carrito antes de continuar.', 'No se puede confirmar la compra');
+      void notificarError(mensaje.textContent || 'Revisa el carrito antes de continuar.', 'No se puede confirmar la compra');
       return;
     }
     confirmar.disabled = true;
@@ -336,11 +336,11 @@ async function mostrarCarrito() {
           el('p', { className: 'compra-modalidad', textContent: esDelivery(compra)
             ? `Modalidad: Delivery con ${textoDelivery(compra)}` : 'Modalidad: Recojo en el local' }),
           el('p', { textContent: `${esDelivery(compra) ? 'El local lo entrega al repartidor' : 'Recojo'}: ${horarioCompra(compra)}` })))));
-      mostrarHistorial();
-      notificarExito('Compra confirmada', 'Cada pedido ya tiene su boleta y su código de recojo.');
+      void mostrarHistorial();
+      void notificarExito('Compra confirmada', 'Cada pedido ya tiene su boleta y su código de recojo.');
     } catch (error) {
       mensaje.textContent = esFalloDeRed(error) ? 'Sin conexión. Revisa tu internet e intenta de nuevo.' : error.message;
-      notificarError(error, 'No se pudo confirmar la compra');
+      void notificarError(error, 'No se pudo confirmar la compra');
       actualizarConfirmacion();
     }
   });
@@ -367,7 +367,7 @@ async function cancelarCompra(compra) {
   if (!await confirmarAccion('¿Cancelar esta compra?', `Recibirás ${reembolso} de reembolso (50 % del total) y el código de recojo dejará de ser válido.`, 'Sí, cancelar compra')) return;
   try {
     await solicitar(`/compras/${compra.reservaId}/cancelar`, { method: 'POST' });
-    notificarExito('Compra cancelada', `El reembolso de ${reembolso} quedó registrado.`);
+    void notificarExito('Compra cancelada', `El reembolso de ${reembolso} quedó registrado.`);
     await mostrarHistorial();
   } catch (error) { aviso(error.message, true, 'No se pudo cancelar la compra'); }
 }
