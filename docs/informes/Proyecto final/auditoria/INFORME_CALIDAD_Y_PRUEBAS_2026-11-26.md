@@ -1,9 +1,8 @@
 # Informe de calidad y pruebas: frontend y backend
 
 **Proyecto:** Sazloop (Grupo 3)
-**Fecha:** 26 de noviembre de 2026
-**Rama:** `calidad/sonarqube-pruebas` (sale de `main` al día con GitHub; último cambio de `main`: `019122a`, «Corrección a la par de la auditoría de SC»).
-**Herramientas:** SonarQube Community Build 26.11 (local, en Docker), JaCoCo 0.8.13 (cobertura del backend), JUnit 5 + Mockito + Spring Boot Test (pruebas del backend), ejecutor de pruebas de Node 24 (pruebas y cobertura del frontend), navegador (pruebas de funcionamiento).
+**Fecha:** 26 de noviembre de 2026 (actualizado el 27 de noviembre de 2026 con las pruebas de pantallas del frontend)
+**Herramientas:** SonarQube Community Build 26.11 (local, en Docker), JaCoCo 0.8.13 (cobertura del backend), JUnit 5 + Mockito + Spring Boot Test (pruebas del backend), ejecutor de pruebas de Node 24 + jsdom 26 (pruebas y cobertura del frontend con un navegador simulado), navegador real (pruebas de funcionamiento).
 
 Este informe responde a las observaciones del profesor sobre el código: **levantar las observaciones encontradas**, **completar las pruebas unitarias** y **aplicar herramientas de análisis de calidad y pruebas al proyecto**.
 
@@ -17,13 +16,13 @@ Este informe responde a las observaciones del profesor sobre el código: **levan
 | Fiabilidad | **A** (0) | **A** (0) |
 | Mantenibilidad | **A** (0) | **A** (0) |
 | Hotspots de seguridad | 0 | 0 |
-| **Cobertura** | **77,1 %** | **14,5 %** |
+| **Cobertura** | **77,1 %** | **98,3 %** |
 | Duplicados | 0,3 % | 0,0 % |
-| Pruebas automáticas | **32** (todas pasan) | **20** (todas pasan) |
+| Pruebas automáticas | **32** (todas pasan) | **308** (todas pasan) |
 | Líneas de código | 5.190 | 5.019 |
-| Umbral de calidad | **Pasa** | No pasa (ver 4.3) |
+| Umbral de calidad | **Pasa** ✅ | **Pasa** ✅ |
 
-**En resumen:** los dos proyectos tienen **cero observaciones** y **A en todas las calificaciones**. La cobertura, que estaba en **0 %** en los dos, ahora es **77,1 %** en el backend y **14,5 %** en el frontend.
+**En resumen:** los dos proyectos tienen **cero observaciones**, **A en todas las calificaciones** y **pasan el umbral de calidad**. La cobertura, que estaba en **0 %** en los dos, ahora es **77,1 %** en el backend y **98,3 %** en el frontend (100 % de las líneas).
 
 ### Capturas de SonarQube
 
@@ -42,8 +41,9 @@ Este informe responde a las observaciones del profesor sobre el código: **levan
 | Seguridad | A (0) | A (0) | B (8) | **A (0)** |
 | Fiabilidad | C (46) | **A (0)** | C (2) | **A (0)** |
 | Mantenibilidad | A (59) | **A (0)** | A (58) | **A (0)** |
-| Cobertura | 0,0 % | **77,1 %** | 0,0 % | **14,5 %** |
+| Cobertura | 0,0 % | **77,1 %** | 0,0 % | **98,3 %** |
 | Duplicados | 0,4 % | 0,3 % | 0,0 % | 0,0 % |
+| Umbral de calidad | — | **Pasa** | — | **Pasa** |
 
 **Cómo se llegó aquí, paso a paso:**
 
@@ -51,7 +51,8 @@ Este informe responde a las observaciones del profesor sobre el código: **levan
 |---|---|---|
 | Análisis del profesor (20/10) | 105 observaciones, 0 % | 68 observaciones, 0 % |
 | Corrección de la auditoría (commit `019122a`) y primer análisis de esta rama | 2 observaciones, 75,7 % (16 pruebas) | 51 observaciones, 0 % |
-| Correcciones de esta rama | **0 observaciones, 77,1 % (32 pruebas)** | **0 observaciones, 14,5 % (20 pruebas)** |
+| Correcciones y pruebas unitarias (26/11) | **0 observaciones, 77,1 % (32 pruebas)** | 0 observaciones, 14,5 % (20 pruebas) |
+| Pruebas de pantallas del frontend (27/11) | — | **0 observaciones, 98,3 % (308 pruebas)** |
 
 **Aviso:** el análisis del profesor se hizo con otro servidor y otra versión de SonarQube. Algunas reglas cambian entre versiones, así que los números de «antes» no son 100 % comparables uno a uno con los de «después».
 
@@ -136,13 +137,50 @@ El frontend no tenía pruebas. Se agregó `frontend/tests/comun.test.js` con **2
 
 Qué revisan: formato de precios, punto final de los mensajes, texto del delivery, vigencia de la tarjeta (acepta el mes actual y rechaza el anterior), detección de falta de internet, creación de elementos sin `innerHTML`, avisos de SweetAlert2 (error, advertencia, éxito, confirmación y el caso sin SweetAlert2), y las llamadas al backend (cookie de sesión, respuesta 204, mensajes de negocio, traducción de errores técnicos a texto claro y errores 5xx).
 
-**Resultado:** 20 pruebas, 0 fallos. `app/comun.js` queda con **100 % de líneas** y **97,6 % de ramas** cubiertas.
+**Resultado:** 20 pruebas, 0 fallos. `app/comun.js` queda con **100 % de líneas** cubiertas.
 
-### 4.3 Por qué el umbral de calidad del frontend no pasa
+### 4.3 Pruebas de las pantallas (288 pruebas más)
 
-El umbral de SonarQube («Sonar way») pide **80 % de cobertura en el código nuevo**. Las 51 líneas corregidas cuentan como código nuevo, y casi todas están dentro de las páginas (botones, formularios, pantallas), que solo se pueden ejecutar en un navegador. Las pruebas unitarias actuales cubren `comun.js`, pero no esas pantallas, así que la cobertura del código nuevo queda en 5,8 %.
+Con solo las pruebas de `comun.js`, el umbral de SonarQube no pasaba: pide **80 % de cobertura en el código nuevo**, y las 51 líneas corregidas están dentro de las pantallas (botones, formularios), que necesitan un navegador para ejecutarse.
 
-**No es un error del código:** seguridad, fiabilidad y mantenibilidad están en A y no hay ninguna observación abierta. Para que el umbral pase, haría falta agregar pruebas de las pantallas con un navegador simulado (por ejemplo, jsdom o Playwright).
+Por eso se agregaron pruebas de **todas las pantallas** con **jsdom**, un navegador simulado que corre dentro de Node. Cada prueba:
+1. carga la página HTML **real** del proyecto (por ejemplo `compras.html`);
+2. ejecuta su JavaScript **real**, sin cambiarlo;
+3. responde las llamadas al backend con datos de ejemplo con la misma forma que los del backend real;
+4. simula lo que haría la persona (clics, formularios, cantidades, permisos de ubicación, confirmaciones);
+5. comprueba lo que se ve en pantalla, lo que se envió al servidor y los avisos que aparecieron;
+6. al final, comprueba que **no hubo ningún error de JavaScript** en la página.
+
+El simulador está en `frontend/tests/navegador.js`. **No se modificó ningún archivo de la app** para estas pruebas.
+
+| Archivo de pruebas | Pruebas | Qué revisa |
+|---|---|---|
+| `accesos-consumidor`, `accesos-consumidor-registro` | 19 | Ingreso y registro del consumidor: éxito, contraseña equivocada (401), bloqueo por intentos (429), sin conexión, correo repetido, enlace de vuelta al QR |
+| `accesos-locales`, `accesos-locales-registro` | 10 | Pestañas trabajador / empresa, ingreso de cada uno y registro de empresa |
+| `accesos-administrador` | 5 | Ingreso del administrador y sus errores |
+| `acceso-inicio` | 10 | Ventana de acceso y menú móvil de la página pública |
+| `portal`, `portal-sin-sesion` | 18 | Barra del consumidor, contador del carrito, foto, cerrar sesión, cambio de vista sin recargar y redirección sin sesión |
+| `inicio-consumidor`, `catalogo` | 25 | Novedades, catálogo, filtros, «Cerca de mí» con y sin permiso, detalle del pack y añadir al carrito con sus validaciones |
+| `compras`, `compras-vacio` | 28 | Carrito, cantidades y stock, recojo o delivery, pago con Yape y tarjeta (vencida y vigente), términos, compra confirmada, historial en todos sus estados y cancelación con reembolso |
+| `qr`, `qr-sin-sesion`, `qr-invalido`, `qr-oferta-error` | 16 | Compra en el local con QR: pago, reserva en efectivo, enlace inválido, oferta que no existe y redirección al ingreso |
+| `resenas` | 8 | Pedido de reseña tras recoger, estrellas, comentario, omitir y errores |
+| `perfil` | 12 | Editar datos, cambiar contraseña y foto (tipo inválido, muy grande, subida correcta) |
+| `notificaciones` | 6 | Lista, marcar una o todas como leídas, vacía y con error |
+| `empresa`, `empresa-registro`, `empresa-sin-sesion` | 51 | Resumen con cifras e impacto (kg y CO₂), locales en cada estado, registrar local con y sin ubicación, documentos, solicitud, cuenta del trabajador, notificaciones y errores |
+| `panel` | 18 | Piezas compartidas de los paneles (insignias, tablas, fechas, cifras, avisos) |
+| `trabajador`, `trabajador-sin-sesion` | 38 | Crear y publicar pack (con validaciones), pack publicado y QR, local suspendido, validar y entregar códigos (pagado, delivery, efectivo, ya usado, inexistente, sin conexión) |
+| `administrador`, `administrador-sin-sesion` | 24 | Solicitudes nuevas y de renovación, revisar documentos, aprobar y rechazar (con motivo obligatorio), establecimientos y errores |
+
+**Resultado:** **308 pruebas del frontend** (20 + 288), **0 fallos**, más de 1.200 comprobaciones.
+
+| Cobertura del frontend | Valor |
+|---|---|
+| Líneas | **100 %** (los 17 archivos de la app) |
+| Ramas | **94,2 %** |
+| Total que muestra SonarQube | **98,3 %** |
+| Cobertura del código nuevo (umbral) | **97,2 %** (pide 80 %) ✅ |
+
+Las pruebas no encontraron errores en la app. Solo apareció un detalle menor: en `ofertas-portal.js`, línea 252, la condición `!Number.isInteger(l.cantidad)` nunca se cumple, porque la línea 245 ya rechaza esas cantidades antes. Es código sobrante, no un fallo.
 
 ---
 
@@ -193,8 +231,7 @@ En ninguna pantalla apareció «null», «undefined» ni «NaN», y la consola d
 ## 6. Pendientes
 
 1. **Pegar las capturas** de las tarjetas de SonarQube en este informe y en el informe final, como pidió el profesor.
-2. **Pruebas de las pantallas del frontend** con un navegador simulado (jsdom o Playwright), para que el umbral de calidad del frontend pase (sección 4.3).
-3. **Subir la cobertura de ramas del backend** (61,4 %): agregar pruebas de los casos de error (datos inválidos, permisos, códigos repetidos).
+2. *(Opcional)* **Subir la cobertura de ramas del backend** (61,4 %): agregar pruebas de los casos de error (datos inválidos, permisos, códigos repetidos).
 
 ---
 
@@ -209,11 +246,12 @@ set SPRING_PROFILES_ACTIVE=dev
 mvnw.cmd clean verify sonar:sonar
 ```
 
-**Frontend** (desde `frontend/`):
+**Frontend** (desde `frontend/`; `npm install` solo la primera vez, instala jsdom para las pruebas):
 
 ```bat
+npm install
 npm run test:cobertura
 docker run --rm -e SONAR_TOKEN=%SONAR_TOKEN% -e SONAR_HOST_URL=http://host.docker.internal:9000 -v "%cd%:/usr/src" sonarsource/sonar-scanner-cli
 ```
 
-La configuración está en `backend/pom.xml` (propiedades `sonar.*` y plugin JaCoCo), `frontend/sonar-project.properties` y `frontend/package.json`.
+La configuración está en `backend/pom.xml` (propiedades `sonar.*` y plugin JaCoCo), `frontend/sonar-project.properties` y `frontend/package.json`. Las pruebas del frontend están en `frontend/tests/` y su navegador simulado en `frontend/tests/navegador.js`.
