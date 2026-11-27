@@ -18,7 +18,7 @@
 | Levantar las observaciones encontradas | ✅ Sí | Se corrigieron todas. Quedan **0 observaciones** en backend y frontend. |
 | Completar las pruebas unitarias | ✅ Sí | Se agregaron **531 pruebas nuevas**: 223 en el backend (ahora tiene 239) y 308 en el frontend, que antes no tenía ninguna. |
 | Aplicar herramientas de análisis de calidad y pruebas | ✅ Sí | SonarQube y JaCoCo quedaron configurados dentro del proyecto. |
-| Captura de SonarQube en el informe (backend y frontend) | ⏳ Falta | Hay que tomar la captura de las dos tarjetas y pegarla en el informe. |
+| Captura de SonarQube en el informe (backend y frontend) | ✅ Lista | Está en `capturas/sonarqube-proyectos.png`. Falta pegarla en el Word del informe final. |
 | Mejorar los diagramas y la exposición | ⏳ Falta | No se tocó en este trabajo. |
 
 ---
@@ -87,7 +87,7 @@ El frontend **no tenía ninguna prueba**. Ahora tiene **308**, que prueban **tod
 
 ## Lo que falta hacer
 
-1. **Tomar la captura** de las dos tarjetas de SonarQube y pegarla en el informe final, como pidió el profesor.
+1. **Pegar la captura** de las dos tarjetas (`capturas/sonarqube-proyectos.png`) en el Word del informe final, como pidió el profesor.
 2. **Mejorar los diagramas** del informe: ponerlos en una carpeta del repositorio en buen tamaño.
 3. **Preparar la exposición.**
 4. **Confirmar 3 reglas de negocio** que salieron al probar (no son errores, pero hay que decidir si así se quiere):

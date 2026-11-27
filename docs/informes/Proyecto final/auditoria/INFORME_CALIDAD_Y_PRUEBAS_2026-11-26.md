@@ -26,9 +26,7 @@ Este informe responde a las observaciones del profesor sobre el código: **levan
 
 ### Capturas de SonarQube
 
-> Pegar aquí las dos tarjetas de SonarQube (página *Projects* en http://localhost:9000/projects), igual que las que envió el profesor:
->
-> `![Tarjetas de SonarQube](capturas/sonarqube-proyectos.png)`
+![Tarjetas de SonarQube del Grupo 3: backend y frontend en verde](capturas/sonarqube-proyectos.png)
 
 ---
 
@@ -257,7 +255,7 @@ En ninguna pantalla apareció «null», «undefined» ni «NaN», y la consola d
 
 ## 6. Pendientes
 
-1. **Pegar las capturas** de las tarjetas de SonarQube en este informe y en el informe final, como pidió el profesor.
+1. **Pegar la captura** de las tarjetas (`capturas/sonarqube-proyectos.png`) en el informe final (Word), como pidió el profesor.
 2. **Revisar con el grupo** las tres observaciones de negocio de la sección 3.6.
 
 ---
