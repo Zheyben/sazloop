@@ -198,10 +198,11 @@ class SolicitudAfiliacionReglasTests extends ApoyoAfiliacion {
         ArchivoPrivado b = new ArchivoPrivado(new byte[] {1, 2, 3}, "pdf");
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
-        assertEquals(a, a);
+        assertEquals(a, List.of(a).get(0));
         assertNotEquals(a, new ArchivoPrivado(new byte[] {1, 2, 4}, "pdf"));
         assertNotEquals(a, new ArchivoPrivado(new byte[] {1, 2, 3}, "png"));
-        assertNotEquals(a, "otro objeto");
+        Object otroObjeto = "otro objeto";
+        assertNotEquals(a, otroObjeto);
         assertEquals("ArchivoPrivado[contenido=3 bytes, extension=pdf]", a.toString());
         ArchivoPrivado vacio = new ArchivoPrivado(null, null);
         assertEquals("ArchivoPrivado[contenido=0 bytes, extension=null]", vacio.toString());

@@ -161,7 +161,7 @@ class ReservasControllerTests extends EscenarioReservasBase {
                 .andExpect(jsonPath("$.venceEn").isNotEmpty())
                 .andReturn().getResponse().getContentAsString();
         assertEquals(1, stock(oferta.id()));
-        String codigo = respuesta.replaceAll(".*\"codigoRecojo\":\"([^\"]+)\".*", "$1");
+        String codigo = com.jayway.jsonpath.JsonPath.read(respuesta, "$.codigoRecojo");
 
         mvc.perform(post("/api/local/efectivo/" + codigo + "/confirmar")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/local/efectivo/" + codigo + "/confirmar").session(sesionLocal(local)))

@@ -16,13 +16,13 @@ Este informe responde a las observaciones del profesor sobre el código: **levan
 | Fiabilidad | **A** (0) | **A** (0) |
 | Mantenibilidad | **A** (0) | **A** (0) |
 | Hotspots de seguridad | 0 | 0 |
-| **Cobertura** | **77,1 %** | **98,3 %** |
+| **Cobertura** | **98,6 %** | **98,3 %** |
 | Duplicados | 0,3 % | 0,0 % |
-| Pruebas automáticas | **32** (todas pasan) | **308** (todas pasan) |
+| Pruebas automáticas | **239** (todas pasan) | **308** (todas pasan) |
 | Líneas de código | 5.190 | 5.019 |
 | Umbral de calidad | **Pasa** ✅ | **Pasa** ✅ |
 
-**En resumen:** los dos proyectos tienen **cero observaciones**, **A en todas las calificaciones** y **pasan el umbral de calidad**. La cobertura, que estaba en **0 %** en los dos, ahora es **77,1 %** en el backend y **98,3 %** en el frontend (100 % de las líneas).
+**En resumen:** los dos proyectos tienen **cero observaciones**, **A en todas las calificaciones** y **pasan el umbral de calidad**. La cobertura, que estaba en **0 %** en los dos, ahora es **98,6 %** en el backend (99 % de líneas) y **98,3 %** en el frontend (100 % de líneas). En total son **547 pruebas automáticas**.
 
 ### Capturas de SonarQube
 
@@ -41,7 +41,7 @@ Este informe responde a las observaciones del profesor sobre el código: **levan
 | Seguridad | A (0) | A (0) | B (8) | **A (0)** |
 | Fiabilidad | C (46) | **A (0)** | C (2) | **A (0)** |
 | Mantenibilidad | A (59) | **A (0)** | A (58) | **A (0)** |
-| Cobertura | 0,0 % | **77,1 %** | 0,0 % | **98,3 %** |
+| Cobertura | 0,0 % | **98,6 %** | 0,0 % | **98,3 %** |
 | Duplicados | 0,4 % | 0,3 % | 0,0 % | 0,0 % |
 | Umbral de calidad | — | **Pasa** | — | **Pasa** |
 
@@ -53,6 +53,7 @@ Este informe responde a las observaciones del profesor sobre el código: **levan
 | Corrección de la auditoría (commit `019122a`) y primer análisis de esta rama | 2 observaciones, 75,7 % (16 pruebas) | 51 observaciones, 0 % |
 | Correcciones y pruebas unitarias (26/11) | **0 observaciones, 77,1 % (32 pruebas)** | 0 observaciones, 14,5 % (20 pruebas) |
 | Pruebas de pantallas del frontend (27/11) | — | **0 observaciones, 98,3 % (308 pruebas)** |
+| Casos de error del backend (27/11) | **0 observaciones, 98,6 % (239 pruebas)** | — |
 
 **Aviso:** el análisis del profesor se hizo con otro servidor y otra versión de SonarQube. Algunas reglas cambian entre versiones, así que los números de «antes» no son 100 % comparables uno a uno con los de «después».
 
@@ -106,6 +107,32 @@ Comando: `mvnw.cmd clean verify` con el perfil `dev` (H2). **Resultado: 32 prueb
 | Total que muestra SonarQube | 75,7 % | **77,1 %** |
 
 El informe detallado se genera en `backend/target/site/jacoco/index.html` al correr las pruebas.
+
+### 3.6 Casos de error del backend (207 pruebas más, 27/11)
+
+Con 32 pruebas el backend quedaba en 77,1 %: casi todo lo que faltaba eran **los caminos de error** (datos inválidos, sin stock, códigos repetidos, permisos de otro dueño, documentos vencidos, etc.). Se agregaron **207 pruebas** que recorren esos casos, en cuatro áreas. **No se modificó ningún archivo de la app.**
+
+| Área | Archivos de pruebas | Pruebas | Qué revisa |
+|---|---|---|---|
+| Afiliación | `afiliacion/RevisionAfiliacionServiceTests`, `SolicitudAfiliacionReglasTests`, `VigenciaDocumentosServiceTests`, `service/AlmacenDocumentoServiceTests`, `service/AdministradorServiceTests`, `controller/AfiliacionControllersTests` | 52 | Aprobar y rechazar solicitudes y documentos, motivos, renovaciones, suspensiones automáticas y manuales, avisos, archivos PDF/PNG/JPG (tipo real, tamaño, rutas inválidas), sesión del administrador y respuestas HTTP 400/401/404/409 |
+| Ofertas y experiencia | `ofertas/service/OfertaServiceTests`, `PanelLocalServiceTests`, `controller/OfertasControllerTests`, `repository/CalificacionTests`, `experiencia/service/ResenaServiceTests`, `NotificacionServiceTests`, `controller/ExperienciaControllerTests` | 45 | Búsqueda con todos sus filtros y «Cerca de mí», ofertas vencidas u ocultas, reglas de publicación de packs, panel del local, reseñas (solo después del recojo, una por compra) y notificaciones |
+| Compras y reservas | `reservas/CompraRecojoServiceTests`, `CompraPresencialServiceTests`, `CancelacionYVencimientoTests`, `service/AvisosReservaServiceTests`, `ReservasControllerTests` | 44 | Compras simples y en lote, stock, variantes ajenas, delivery, consumidor bloqueado, código de recojo (minúsculas, sin guion, de otro local, repetido), compra con QR, reserva en efectivo y su vencimiento, cancelación con 50 % de reembolso |
+| Identidad y sesiones | `identidad/IdentidadServiciosTests`, `IdentidadControladoresTests`, `service/CodificadorContrasenaTests`, `service/IndicadoresEmpresaServiceTests`, `afiliacion/service/AdministradorAccesoTests`, `shared/SesionesPorRolTests`, `LimiteIntentosLoginCaducidadTests` | 66 | Perfil y foto, cambio de contraseña, contraseñas cifradas (PBKDF2), registro, empresas y RUC, cuentas de trabajador, sesiones de cada rol, bloqueo por intentos y su vencimiento, indicadores de la empresa |
+
+**Resultado:** **239 pruebas del backend, 0 fallos.**
+
+| Cobertura del backend | Antes (32 pruebas) | Ahora (239 pruebas) |
+|---|---|---|
+| Líneas | 84,4 % | **99,0 %** |
+| Ramas | 61,4 % | **97,8 %** |
+| Total que muestra SonarQube | 77,1 % | **98,6 %** |
+
+Lo poco que queda sin cubrir son casos que solo pasan si dos personas hacen lo mismo al mismo tiempo, o errores de Java que no se pueden provocar (por ejemplo, que el algoritmo de cifrado no exista).
+
+**Observaciones de negocio para revisar con el grupo** (no son errores, pero conviene confirmar que es lo que se quiere):
+- En el resumen de la empresa, un pedido **pagado que no se recogió** (vencido) cuenta a la vez como **venta** y como **«no recogido»**.
+- Un pedido **pagado y después cancelado** sigue sumando la **comisión de Sazloop**.
+- Si el motivo de un rechazo es solo puntuación (por ejemplo «. .»), el aviso dice «Motivo: . Puedes adjuntar…».
 
 ---
 
@@ -231,7 +258,7 @@ En ninguna pantalla apareció «null», «undefined» ni «NaN», y la consola d
 ## 6. Pendientes
 
 1. **Pegar las capturas** de las tarjetas de SonarQube en este informe y en el informe final, como pidió el profesor.
-2. *(Opcional)* **Subir la cobertura de ramas del backend** (61,4 %): agregar pruebas de los casos de error (datos inválidos, permisos, códigos repetidos).
+2. **Revisar con el grupo** las tres observaciones de negocio de la sección 3.6.
 
 ---
 

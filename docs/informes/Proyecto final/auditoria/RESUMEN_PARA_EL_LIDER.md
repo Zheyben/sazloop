@@ -7,7 +7,7 @@
 
 ## En una frase
 
-**El backend y el frontend ya no tienen ninguna observación en SonarQube, todo está en A, los dos pasan el umbral de calidad (verde) y la cobertura subió de 0 % a 77 % en el backend y a 98 % en el frontend.**
+**El backend y el frontend ya no tienen ninguna observación en SonarQube, todo está en A, los dos pasan el umbral de calidad (verde) y la cobertura subió de 0 % a casi 99 % en los dos.**
 
 ---
 
@@ -16,7 +16,7 @@
 | Lo que pidió el profesor | ¿Hecho? | Qué se hizo |
 |---|---|---|
 | Levantar las observaciones encontradas | ✅ Sí | Se corrigieron todas. Quedan **0 observaciones** en backend y frontend. |
-| Completar las pruebas unitarias | ✅ Sí | Se agregaron **324 pruebas nuevas**: 16 en el backend y 308 en el frontend, que antes no tenía ninguna. |
+| Completar las pruebas unitarias | ✅ Sí | Se agregaron **531 pruebas nuevas**: 223 en el backend (ahora tiene 239) y 308 en el frontend, que antes no tenía ninguna. |
 | Aplicar herramientas de análisis de calidad y pruebas | ✅ Sí | SonarQube y JaCoCo quedaron configurados dentro del proyecto. |
 | Captura de SonarQube en el informe (backend y frontend) | ⏳ Falta | Hay que tomar la captura de las dos tarjetas y pegarla en el informe. |
 | Mejorar los diagramas y la exposición | ⏳ Falta | No se tocó en este trabajo. |
@@ -32,7 +32,7 @@
 | Seguridad | A | **A** |
 | Fiabilidad | **C** (46 problemas) | **A** (0) ✅ |
 | Mantenibilidad | A (59 problemas) | **A** (0) ✅ |
-| Cobertura | 🔴 **0 %** | 🟢 **77,1 %** ✅ |
+| Cobertura | 🔴 **0 %** | 🟢 **98,6 %** ✅ |
 | Duplicados | 0,4 % | 0,3 % |
 | Umbral de calidad | — | 🟢 **Pasa** ✅ |
 
@@ -51,7 +51,7 @@
 
 ## ¿Por qué la cobertura salía en 0 %?
 
-El backend **sí tenía pruebas**, pero SonarQube no podía verlas. Faltaba una herramienta llamada **JaCoCo**, que mide qué partes del código recorren las pruebas. Ya está agregada, y por eso el backend pasó de **0 % a 77,1 %**.
+El backend **sí tenía pruebas**, pero SonarQube no podía verlas. Faltaba una herramienta llamada **JaCoCo**, que mide qué partes del código recorren las pruebas. Al agregarla, el backend pasó de **0 % a 77,1 %**. Después se agregaron más de 200 pruebas de los casos de error (datos inválidos, sin stock, códigos repetidos, permisos, documentos vencidos…), y llegó a **98,6 %**.
 
 El frontend **no tenía ninguna prueba**. Ahora tiene **308**, que prueban **todas las pantallas**, y pasó de **0 % a 98,3 %**.
 
@@ -65,7 +65,8 @@ El frontend **no tenía ninguna prueba**. Ahora tiene **308**, que prueban **tod
   - el bloqueo después de 5 intentos fallidos de inicio de sesión;
   - el cálculo de kilos de comida y CO₂ evitado;
   - la distancia de «Cerca de mí».
-- Ahora hay **32 pruebas y todas pasan**.
+- **207 pruebas más** de los casos de error de afiliación, ofertas, compras, reservas, perfil y sesiones.
+- Ahora hay **239 pruebas y todas pasan**.
 
 **Frontend**
 - Se arreglaron **51 avisos** del mismo tipo: llamadas que se lanzaban sin esperar su respuesta. En la práctica, el carrito ahora muestra un mensaje si no puede cargar, en vez de quedarse en blanco.
@@ -89,6 +90,10 @@ El frontend **no tenía ninguna prueba**. Ahora tiene **308**, que prueban **tod
 1. **Tomar la captura** de las dos tarjetas de SonarQube y pegarla en el informe final, como pidió el profesor.
 2. **Mejorar los diagramas** del informe: ponerlos en una carpeta del repositorio en buen tamaño.
 3. **Preparar la exposición.**
+4. **Confirmar 3 reglas de negocio** que salieron al probar (no son errores, pero hay que decidir si así se quiere):
+   - un pedido pagado que no se recogió cuenta como venta **y** como «no recogido»;
+   - un pedido pagado y luego cancelado sigue sumando la comisión de Sazloop;
+   - si el motivo de un rechazo es solo puntuación («. .»), el aviso sale como «Motivo: . Puedes adjuntar…».
 
 ---
 

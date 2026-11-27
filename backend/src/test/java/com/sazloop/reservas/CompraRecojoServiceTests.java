@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,8 +73,9 @@ class CompraRecojoServiceTests extends EscenarioReservasBase {
     @Test
     void ofertaInexistenteDevuelve404() {
         Long consumidor = usuario();
-        falla(HttpStatus.NOT_FOUND, () -> compras.comprar(consumidor, new CompraRequest(Long.MAX_VALUE,
-                Pago.MedioPago.YAPE, List.of(new CompraRequest.Linea(1L, 1)))));
+        CompraRequest pedido = new CompraRequest(Long.MAX_VALUE, Pago.MedioPago.YAPE, List.of(new CompraRequest.Linea(1L, 1)));
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> compras.comprar(consumidor, pedido));
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
     }
 
     @Test

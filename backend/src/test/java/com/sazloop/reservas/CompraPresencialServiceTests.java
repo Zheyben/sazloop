@@ -85,7 +85,7 @@ class CompraPresencialServiceTests extends EscenarioReservasBase {
                         new CompraRequest.Linea(variante(oferta), 1), new CompraRequest.Linea(variante(oferta), 1)))));
         assertEquals(new BigDecimal("16.00"), retencion.total());
         assertEquals(2, stock(oferta.id()));
-        long minutos = Duration.between(antes, retencion.venceEn()).toMinutes();
+        long minutos = Duration.between(antes.atZone(Tiempo.ZONA), retencion.venceEn().atZone(Tiempo.ZONA)).toMinutes();
         assertTrue(minutos >= 9 && minutos <= 10, "La retención dura 10 minutos: " + minutos);
         assertEquals(Reserva.EstadoReserva.PENDIENTE_PAGO, estadoReserva(retencion.reservaId()));
         List<RetencionStock> holds = retencionesRepo.findByReserva_Id(retencion.reservaId());

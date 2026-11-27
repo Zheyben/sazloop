@@ -212,7 +212,8 @@ class IdentidadServiciosTests {
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, otroTipo);
         assertNotEquals(a, otroContenido);
-        assertNotEquals(a, "image/png");
+        Object otroObjeto = "image/png";
+        assertNotEquals(a, otroObjeto);
         assertEquals("Foto[tipo=image/png, contenido=3 bytes]", a.toString());
         assertEquals("Foto[tipo=null, contenido=0 bytes]", new PerfilService.Foto(null, null).toString());
     }
