@@ -64,3 +64,40 @@ Para ingresar al administrador debes ingresar estas credenciales:
 - Contraseña: admin123
 
 Abre [http://localhost:8080/](http://localhost:8080/) cuando arranque Tomcat. Las tablas se crean o actualizan automáticamente. **MySQL conserva sus datos** al detener la aplicación, pero una instalación nueva no recibe las cuentas de H2 ni las de otra computadora. La cuenta administradora se crea solamente si el correo indicado todavía no existe en esa base; cambiar la variable después no modifica su contraseña.
+
+## Calidad del código y pruebas automáticas
+
+El proyecto se analiza con **SonarQube** y tiene **547 pruebas automáticas**. Último análisis (27 de noviembre de 2026):
+
+| | Seguridad | Fiabilidad | Mantenibilidad | Cobertura de pruebas | Pruebas | Umbral de calidad |
+|---|---|---|---|---|---|---|
+| Backend | A | A | A | **98,6 %** | 239 | ✅ Passed |
+| Frontend | A | A | A | **98,3 %** | 308 | ✅ Passed |
+
+![Tarjetas de SonarQube](docs/informes/Proyecto%20final/auditoria/capturas/sonarqube-proyectos.png)
+
+### Correr las pruebas
+
+**Backend** (Java 21), desde la carpeta `backend/`. Usa el perfil `dev` para no escribir en MySQL:
+
+```bat
+set SPRING_PROFILES_ACTIVE=dev
+mvnw.cmd clean verify
+```
+
+El informe de cobertura queda en `backend/target/site/jacoco/index.html`.
+
+**Frontend** (Node 22 o superior), desde la carpeta `frontend/`. `npm install` solo la primera vez: instala jsdom, un navegador simulado que se usa solo para las pruebas.
+
+```bat
+npm install
+npm test
+```
+
+### Documentos
+
+Todos están en `docs/informes/Proyecto final/auditoria/`:
+
+- [Cómo logramos estos resultados](docs/informes/Proyecto%20final/auditoria/COMO_LOGRAMOS_ESTOS_RESULTADOS.md): explicación simple, para todo el equipo.
+- [Resumen para el líder](docs/informes/Proyecto%20final/auditoria/RESUMEN_PARA_EL_LIDER.md).
+- [Informe técnico completo](docs/informes/Proyecto%20final/auditoria/INFORME_CALIDAD_Y_PRUEBAS_2026-11-26.md): cada corrección, cada grupo de pruebas y cómo repetir el análisis con SonarQube.
